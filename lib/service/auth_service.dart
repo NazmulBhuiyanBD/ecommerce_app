@@ -1,22 +1,19 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  /// New Google API
+
   final GoogleSignIn signIn = GoogleSignIn.instance;
 
   Future<User?> signInWithGoogle() async {
     try {
-      // Step 1 — initialize Google client
       await signIn.initialize();
-
-      // Step 2 — open Google Sign-In popup
       await signIn.authenticate();
 
-      // Step 3 — wait for sign-in event
       final completer = Completer<GoogleSignInAccount?>();
       late StreamSubscription sub;
 
@@ -31,31 +28,26 @@ class AuthService {
       final GoogleSignInAccount? account = await completer.future;
       await sub.cancel();
 
-      if (account == null) {
-        print("❌ Google Sign-In cancelled");
-        return null;
-      }
+      if (account == null) return null;
 
-      // Step 4 — request server auth code (this acts as idToken for Firebase)
       final serverAuth = await account.authorizationClient.authorizeServer(
         ['email', 'profile', 'openid'],
       );
 
       if (serverAuth == null || serverAuth.serverAuthCode.isEmpty) {
-        print("❌ Failed to get serverAuthCode");
+        print("Google authCode error");
         return null;
       }
 
-      // Step 5 — Use serverAuthCode as idToken for Firebase
       final credential = GoogleAuthProvider.credential(
         idToken: serverAuth.serverAuthCode,
       );
 
-      // Step 6 — Sign in to Firebase
-      final userCredential =
-          await FirebaseAuth.instance.signInWithCredential(credential);
+      final userCred = await _auth.signInWithCredential(credential);
 
-      return userCredential.user;
+      await _saveUserToFirestore(userCred.user!);
+
+      return userCred.user;
 
     } catch (e) {
       print("🔥 Google Sign-In Error: $e");
@@ -63,23 +55,40 @@ class AuthService {
     }
   }
 
-  // Email Login
+
+  Future<void> _saveUserToFirestore(User user) async {
+    final doc = FirebaseFirestore.instance.collection("users").doc(user.uid);
+
+    if (!(await doc.get()).exists) {
+      await doc.set({
+        "name": user.displayName ?? "",
+        "email": user.email ?? "",
+        "role": "customer",
+        "status": "approved",
+        "shopId": "",
+        "createdAt": FieldValue.serverTimestamp(),
+      });
+    }
+  }
+
   Future<User?> signInWithEmail(String email, String password) async {
-    final result = await _auth.signInWithEmailAndPassword(
-        email: email, password: password);
-    return result.user;
+    return (await _auth.signInWithEmailAndPassword(
+            email: email, password: password))
+        .user;
   }
 
-  // Email Register
+
   Future<User?> registerWithEmail(String email, String password) async {
-    final result = await _auth.createUserWithEmailAndPassword(
-        email: email, password: password);
-    return result.user;
+    return (await _auth.createUserWithEmailAndPassword(
+            email: email, password: password))
+        .user;
   }
 
-  // Logout
+
   Future<void> signOut() async {
-    await signIn.disconnect();
+    try {
+      await signIn.disconnect();
+    } catch (_) {}
     await _auth.signOut();
   }
 

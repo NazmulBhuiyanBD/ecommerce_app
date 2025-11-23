@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'main_page.dart';
+import '../auth/role_checker.dart';
 
 class OnBoardingScreen extends StatefulWidget {
   const OnBoardingScreen({super.key});
@@ -15,8 +15,13 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
   Future<void> _complete() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('seenOnboarding', true);
+
     if (!mounted) return;
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainPage()));
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const RoleChecker()),
+    );
   }
 
   @override
@@ -35,23 +40,13 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                 ],
               ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(2, (i) => _indicator(i == _page)),
-            ),
+
+            _indicatorRow(),
+
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                  onPressed: _complete,
-                  child: Text(_page == 1 ? 'Get Started' : 'Next'),
-                ),
-              ),
-            ),
+
+            _button(),
+
             const SizedBox(height: 24),
           ],
         ),
@@ -66,12 +61,19 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(title, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 20),
-          Image.asset(asset, height: 360),
+          const SizedBox(height: 10),
+          Image.asset(asset, height: 400),
           const SizedBox(height: 10),
           Text(subtitle, style: const TextStyle(fontSize: 16, color: Colors.black54)),
         ],
       ),
+    );
+  }
+
+  Widget _indicatorRow() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(2, (i) => _indicator(i == _page)),
     );
   }
 
@@ -83,6 +85,30 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
       decoration: BoxDecoration(
         color: active ? Colors.orange : Colors.grey.shade300,
         borderRadius: BorderRadius.circular(8),
+      ),
+    );
+  }
+
+  Widget _button() {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+          onPressed: () {
+            if (_page == 1) {
+              _complete();
+            } else {
+              _ctrl.nextPage(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            }
+          },
+          child: Text(_page == 1 ? 'Get Started' : 'Next'),
+        ),
       ),
     );
   }

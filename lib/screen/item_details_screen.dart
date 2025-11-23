@@ -24,8 +24,6 @@ class ItemDetailsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            // ---------------- IMAGE ----------------
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.network(
@@ -37,8 +35,6 @@ class ItemDetailsScreen extends StatelessWidget {
             ),
 
             const SizedBox(height: 20),
-
-            // ---------------- NAME ----------------
             Text(
               product["name"] ?? "",
               style: const TextStyle(
@@ -49,7 +45,6 @@ class ItemDetailsScreen extends StatelessWidget {
 
             const SizedBox(height: 10),
 
-            // ---------------- PRICE ----------------
             Text(
               "৳ ${product["price"]}",
               style: const TextStyle(
@@ -61,7 +56,6 @@ class ItemDetailsScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // ---------------- DESCRIPTION ----------------
             const Text(
               "Description",
               style: TextStyle(
@@ -85,7 +79,6 @@ class ItemDetailsScreen extends StatelessWidget {
         ),
       ),
 
-      // ---------------- ADD TO CART BUTTON ----------------
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(12),
         height: 70,

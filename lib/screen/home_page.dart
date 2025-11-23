@@ -3,8 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecommerce_app/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
-import 'item_details_screen.dart'; // you'll create or adapt this to show product details
-
+import 'item_details_screen.dart'; 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 

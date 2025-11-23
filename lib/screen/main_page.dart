@@ -27,18 +27,14 @@ class _MainPageState extends State<MainPage> {
   ];
 
   void handleNavigation(int index) {
-    /// If user taps Profile tab (index = 3)
-    if (index == 3) {
-      final user = FirebaseAuth.instance.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
 
-      if (user == null) {
-        /// User NOT logged in → redirect to LoginPage
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginPage()),
-        );
-        return; // prevent switching to profile tab
-      }
+    if (index == 3 && user == null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+      );
+      return;
     }
 
     setState(() => selectedIndex = index);
@@ -49,19 +45,39 @@ class _MainPageState extends State<MainPage> {
     return Scaffold(
       body: pages[selectedIndex],
 
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: selectedIndex,
-        onTap: handleNavigation,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: Colors.grey,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
+            )
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: selectedIndex,
+          onTap: handleNavigation,
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
 
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Iconsax.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Iconsax.category), label: 'Categories'),
-          BottomNavigationBarItem(icon: Icon(Iconsax.shopping_cart), label: 'Cart'),
-          BottomNavigationBarItem(icon: Icon(Iconsax.user), label: 'Profile'),
-        ],
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: Colors.grey,
+
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+
+          items: const [
+            BottomNavigationBarItem(
+                icon: Icon(Iconsax.home), label: 'Home'),
+            BottomNavigationBarItem(
+                icon: Icon(Iconsax.category), label: 'Categories'),
+            BottomNavigationBarItem(
+                icon: Icon(Iconsax.shopping_cart), label: 'Cart'),
+            BottomNavigationBarItem(
+                icon: Icon(Iconsax.user), label: 'Profile'),
+          ],
+        ),
       ),
     );
   }

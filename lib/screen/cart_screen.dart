@@ -1,56 +1,136 @@
+import 'package:ecommerce_app/auth/login_page.dart';
 import 'package:ecommerce_app/provider/cart_provider.dart';
 import 'package:ecommerce_app/utils/app_colors.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('My Cart')),
+      appBar: AppBar(
+        title: const Text("My Cart"),
+        centerTitle: true,
+        backgroundColor: AppColors.primary,
+      ),
+
       body: cart.items.isEmpty
-          ? const Center(child: Text('Your cart is empty'))
-          : Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: cart.items.length,
-                    itemBuilder: (_, i) {
-                      final c = cart.items[i];
-                      return ListTile(
-                        leading: Image.network(c.product['image'], width: 60, height: 60, fit: BoxFit.cover),
-                        title: Text(c.product['name']),
-                        subtitle: Text('৳ ${c.product['price']}'),
-                        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                          IconButton(icon: const Icon(Icons.remove), onPressed: () => cart.decrease(c.product)),
-                          Text('${c.quantity}'),
-                          IconButton(icon: const Icon(Icons.add), onPressed: () => cart.increase(c.product)),
-                        ]),
-                      );
-                    },
+          ? const Center(
+              child: Text(
+                "Your cart is empty",
+                style: TextStyle(fontSize: 18, color: Colors.grey),
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: cart.items.length,
+              itemBuilder: (_, index) {
+                final item = cart.items[index];
+                final product = item.product;
+
+                return Card(
+                  elevation: 3,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  color: Colors.white,
-                  child: Row(
+                  child: ListTile(
+                    leading: Image.network(
+                      product['image'],
+                      width: 55,
+                      height: 55,
+                      fit: BoxFit.cover,
+                    ),
+                    title: Text(product['name']),
+                    subtitle: Text("৳ ${product['price']}"),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => cart.remove(product),
+                    ),
+                  ),
+                );
+              },
+            ),
+
+      bottomNavigationBar: cart.items.isEmpty
+          ? const SizedBox()
+          : Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                      blurRadius: 8,
+                      color: Colors.black.withOpacity(0.1),
+                      offset: const Offset(0, -3))
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  /// TOTAL PRICE
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Total: ৳ ${cart.totalPrice().toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                        onPressed: () {
-                          // implement checkout (create order in Firestore)
-                        },
-                        child: const Text('Checkout'),
-                      )
+                      const Text(
+                        "Total:",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        "৳ ${cart.totalPrice().toStringAsFixed(2)}",
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: () {
+                        final user = FirebaseAuth.instance.currentUser;
+
+                        if (user == null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const LoginPage()),
+                          );
+                          return;
+                        }
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Proceeding to checkout..."),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        "Checkout",
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
     );
   }

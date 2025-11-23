@@ -20,23 +20,20 @@ class _ProfilePageState extends State<ProfilePage> {
     checkUser();
   }
 
-  /// 🔥 CHECK USER LOGIN + FIRESTORE PROFILE
+
   Future<void> checkUser() async {
     user = FirebaseAuth.instance.currentUser;
-
-    /// 🟥 Not logged in -> redirect to login
     if (user == null) {
       redirectToLogin();
       return;
     }
 
-    /// fetch Firestore profile
+
     final doc = await FirebaseFirestore.instance
         .collection("users")
         .doc(user!.uid)
         .get();
 
-    /// 🟥 Profile not found -> logout + redirect
     if (!doc.exists) {
       await FirebaseAuth.instance.signOut();
       redirectToLogin();
@@ -60,14 +57,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    /// Still loading user data
     if (user == null || userData == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    /// User data is ready → Show Profile
     return Scaffold(
       appBar: AppBar(
         title: const Text("My Profile"),
