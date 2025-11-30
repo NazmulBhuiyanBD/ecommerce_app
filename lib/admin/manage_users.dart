@@ -53,13 +53,11 @@ class _ManageUsersState extends State<ManageUsers> {
 
                   final allUsers = snapshot.data!.docs;
 
-                  /// SORT LOCALLY
                   allUsers.sort((a, b) =>
                       (a["name"] ?? "").toString().compareTo(
                             (b["name"] ?? "").toString(),
                           ));
 
-                  /// APPLY SEARCH
                   final filtered = allUsers.where((u) {
                     final name = (u["name"] ?? "").toLowerCase();
                     final email = (u["email"] ?? "").toLowerCase();
@@ -67,7 +65,6 @@ class _ManageUsersState extends State<ManageUsers> {
                     return name.contains(q) || email.contains(q);
                   }).toList();
 
-                  /// PAGINATION
                   final total = filtered.length;
                   final start = page * limit;
                   final end = (start + limit > total) ? total : start + limit;
@@ -183,7 +180,6 @@ class _ManageUsersState extends State<ManageUsers> {
                               ),
                       ),
 
-                      /// PAGINATION BUTTONS
                       if (total > limit)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,

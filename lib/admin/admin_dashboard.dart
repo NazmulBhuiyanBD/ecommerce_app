@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ecommerce_app/admin/manage_categories.dart';
 import 'package:ecommerce_app/service/auth_service.dart';
 import 'package:ecommerce_app/utils/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -86,6 +87,18 @@ class AdminDashboard extends StatelessWidget {
                 MaterialPageRoute(builder: (_) => const ManageProducts()),
               ),
             ),
+            dashboardCard(
+  title: "Categories",
+  icon: Icons.category,
+  iconColor: Colors.indigo,
+  badgeColor: Colors.indigo.shade50,
+  stream: getCount("categories"),
+  onTap: () => Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => const ManageCategories()),
+  ),
+),
+
 
             dashboardCard(
               title: "Customers",

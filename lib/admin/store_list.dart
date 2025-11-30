@@ -35,65 +35,110 @@ class StoreList extends StatelessWidget {
             itemBuilder: (_, i) {
               final shop = shops[i];
               final shopId = shop.id;
-              final shopName = shop["shopName"];
-              final ownerName = shop["ownerName"];
-              final status = shop["status"]; // approved / pending / disabled
+
+              final shopName = shop["name"] ?? "";
+              final banner = shop["bannerImage"] ?? "";
+              final ownerId = shop["ownerId"] ?? "";
+              final status = shop["status"] ?? "pending";
 
               return FutureBuilder(
                 future: FirebaseFirestore.instance
                     .collection("products")
                     .where("shopId", isEqualTo: shopId)
                     .get(),
-                builder: (_, snap) {
+
+                builder: (_, productSnap) {
                   int productCount = 0;
-                  if (snap.hasData) productCount = snap.data!.docs.length;
+                  if (productSnap.hasData) {
+                    productCount = productSnap.data!.docs.length;
+                  }
 
-                  return Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(15),
+                  return FutureBuilder(
+                    future: FirebaseFirestore.instance
+                        .collection("users")
+                        .doc(ownerId)
+                        .get(),
 
-                      title: Text(
-                        shopName,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
+                    builder: (_, ownerSnap) {
+                      String ownerName = "Unknown Owner";
 
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("Owner: $ownerName"),
-                          Text("Products: $productCount"),
-                          Text("Status: $status",
-                              style: TextStyle(
+                      if (ownerSnap.hasData && ownerSnap.data!.exists) {
+                        ownerName = ownerSnap.data!["name"] ?? "Unknown";
+                      }
+
+                      return Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(15),
+
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: banner.isNotEmpty
+                                ? Image.network(
+                                    banner,
+                                    width: 70,
+                                    height: 70,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Container(
+                                    width: 70,
+                                    height: 70,
+                                    color: Colors.grey.shade300,
+                                    child: const Icon(Icons.store, size: 35),
+                                  ),
+                          ),
+
+                          title: Text(
+                            shopName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("Owner: $ownerName"),
+                              Text("Products: $productCount"),
+                              Text(
+                                "Status: $status",
+                                style: TextStyle(
                                   color: status == "approved"
                                       ? Colors.green
-                                      : Colors.orange,
-                                  fontWeight: FontWeight.bold)),
-                        ],
-                      ),
+                                      : status == "disabled"
+                                          ? Colors.red
+                                          : Colors.orange,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
 
-                      trailing: PopupMenuButton(
-                        itemBuilder: (_) => [
-                          const PopupMenuItem(
-                              value: "approve", child: Text("Approve")),
-                          const PopupMenuItem(
-                              value: "disable", child: Text("Disable")),
-                        ],
-                        onSelected: (value) {
-                          String newStatus = value == "approve"
-                              ? "approved"
-                              : "disabled";
+                          trailing: PopupMenuButton(
+                            itemBuilder: (_) => [
+                              const PopupMenuItem(
+                                  value: "approve", child: Text("Approve")),
+                              const PopupMenuItem(
+                                  value: "disable", child: Text("Disable")),
+                            ],
 
-                          FirebaseFirestore.instance
-                              .collection("shops")
-                              .doc(shopId)
-                              .update({"status": newStatus});
-                        },
-                      ),
-                    ),
+                            onSelected: (value) {
+                              String newStatus =
+                                  value == "approve" ? "approved" : "disabled";
+
+                              FirebaseFirestore.instance
+                                  .collection("shops")
+                                  .doc(shopId)
+                                  .update({"status": newStatus});
+                            },
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               );

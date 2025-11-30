@@ -140,7 +140,6 @@ class _ManageProductsState extends State<ManageProducts> {
                       ),
           ),
 
-          // PAGINATION BUTTONS (only if more than 10 products)
           if (products.length == limit || lastDoc != null) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,

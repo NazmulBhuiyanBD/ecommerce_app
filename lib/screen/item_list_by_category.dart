@@ -76,7 +76,6 @@ class ItemListByCategory extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // IMAGE
                       Expanded(
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
@@ -90,8 +89,6 @@ class ItemListByCategory extends StatelessWidget {
                       ),
 
                       const SizedBox(height: 8),
-
-                      // NAME
                       Text(
                         product["name"],
                         maxLines: 2,
@@ -100,8 +97,6 @@ class ItemListByCategory extends StatelessWidget {
                       ),
 
                       const SizedBox(height: 6),
-
-                      // PRICE
                       Text(
                         "৳ ${product["price"]}",
                         style: const TextStyle(

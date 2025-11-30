@@ -9,7 +9,6 @@ class ManageShopOwners extends StatelessWidget {
       "status": "approved",
     });
 
-    // create shop document
     final shopId = FirebaseFirestore.instance.collection("shops").doc().id;
 
     await FirebaseFirestore.instance.collection("shops").doc(shopId).set({

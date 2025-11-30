@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ecommerce_app/utils/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -26,7 +27,8 @@ class ShopOrdersPage extends StatelessWidget {
         final shopId = snap.data as String;
 
         return Scaffold(
-          appBar: AppBar(title: const Text("Shop Orders")),
+          backgroundColor: AppColors.secondary,
+          appBar: AppBar(title: const Text("Shop Orders"),backgroundColor: AppColors.secondary,),
 
           body: StreamBuilder(
             stream: FirebaseFirestore.instance
