@@ -11,8 +11,10 @@ class ManageProducts extends StatefulWidget {
 class _ManageProductsState extends State<ManageProducts> {
   String search = "";
   int limit = 10;
+
   DocumentSnapshot? lastDoc;
   DocumentSnapshot? firstDoc;
+
   bool hasMore = true;
   bool isLoading = false;
 
@@ -26,6 +28,7 @@ class _ManageProductsState extends State<ManageProducts> {
 
   Future<void> loadProducts({bool nextPage = false, bool prevPage = false}) async {
     if (isLoading) return;
+
     setState(() => isLoading = true);
 
     Query query = FirebaseFirestore.instance
@@ -88,16 +91,26 @@ class _ManageProductsState extends State<ManageProducts> {
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
+
                 : products.isEmpty
                     ? const Center(child: Text("No products found"))
+
                     : ListView.builder(
                         padding: const EdgeInsets.all(12),
                         itemCount: products.length,
                         itemBuilder: (_, index) {
                           final p = products[index];
-                          final name = p["name"].toString();
-                          final shopId = p["shopId"];
+                          final data = p.data() as Map<String, dynamic>;
 
+                          final name = data["name"]?.toString() ?? "Unnamed";
+                          final price = data["price"] ?? 0;
+                          final shopId = data["shopId"];
+
+                          // Safe read active
+                          final isActive =
+                              (data["active"] is bool) ? data["active"] : true;
+
+                          // Search condition
                           if (!name.toLowerCase().contains(search)) {
                             return const SizedBox.shrink();
                           }
@@ -109,8 +122,11 @@ class _ManageProductsState extends State<ManageProducts> {
                                 .get(),
                             builder: (_, s) {
                               String shopName = "Unknown Shop";
+
                               if (s.hasData && s.data!.exists) {
-                                shopName = s.data!["shopName"];
+                                final shopData =
+                                    s.data!.data() as Map<String, dynamic>;
+                                shopName = shopData["name"] ?? "Unknown Shop"; // FIXED
                               }
 
                               return Card(
@@ -118,13 +134,17 @@ class _ManageProductsState extends State<ManageProducts> {
                                   borderRadius: BorderRadius.circular(15),
                                 ),
                                 child: ListTile(
-                                  title: Text(name,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold)),
+                                  title: Text(
+                                    name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   subtitle: Text(
-                                      "Shop: $shopName\nPrice: ৳${p["price"]}"),
+                                      "Shop: $shopName\nPrice: ৳$price"),
+
                                   trailing: Switch(
-                                    value: p["active"] ?? true,
+                                    value: isActive,
                                     onChanged: (value) {
                                       FirebaseFirestore.instance
                                           .collection("products")
@@ -140,7 +160,8 @@ class _ManageProductsState extends State<ManageProducts> {
                       ),
           ),
 
-          if (products.length == limit || lastDoc != null) ...[
+          // PAGINATION BUTTONS
+          if (products.isNotEmpty) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -151,7 +172,8 @@ class _ManageProductsState extends State<ManageProducts> {
                   child: const Text("Previous"),
                 ),
                 ElevatedButton(
-                  onPressed: hasMore ? () => loadProducts(nextPage: true) : null,
+                  onPressed:
+                      hasMore ? () => loadProducts(nextPage: true) : null,
                   child: const Text("Next"),
                 ),
               ],

@@ -16,7 +16,7 @@ class ItemListByCategory extends StatelessWidget {
       backgroundColor: AppColors.secondary,
       appBar: AppBar(
         title: Text(category),
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.secondary,
       ),
 
       body: StreamBuilder(

@@ -47,9 +47,6 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // -------------------------------------------------------------------
-  // TOP BAR
-  // -------------------------------------------------------------------
   Widget _topBar(BuildContext context) {
     return Row(
       children: [
@@ -86,57 +83,51 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // -------------------------------------------------------------------
-  // BANNER SLIDER
-  // -------------------------------------------------------------------
-  Widget _bannerSlider() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('banners')
-          .orderBy('order')
-          .snapshots(),
-      builder: (context, snap) {
-        if (!snap.hasData) {
-          return const SizedBox(
-            height: 160,
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        final docs = snap.data!.docs;
-
-        if (docs.isEmpty) {
-          return const SizedBox(
-            height: 160,
-            child: Center(child: Text('No banners found')),
-          );
-        }
-
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: CarouselSlider(
-            options: CarouselOptions(
-              height: 160,
-              autoPlay: true,
-              viewportFraction: 1,
-            ),
-            items: docs.map((d) {
-              final url = d['imageUrl'];
-              return Image.network(
-                url,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              );
-            }).toList(),
-          ),
+Widget _bannerSlider() {
+  return StreamBuilder<QuerySnapshot>(
+    stream: FirebaseFirestore.instance
+        .collection('banners')
+        .orderBy('timestamp', descending: true)
+        .snapshots(),
+    builder: (context, snap) {
+      if (!snap.hasData) {
+        return const SizedBox(
+          height: 160,
+          child: Center(child: CircularProgressIndicator()),
         );
-      },
-    );
-  }
+      }
 
-  // -------------------------------------------------------------------
-  // QUICK MENU
-  // -------------------------------------------------------------------
+      final docs = snap.data!.docs;
+
+      if (docs.isEmpty) {
+        return const SizedBox(
+          height: 160,
+          child: Center(child: Text('No banners found')),
+        );
+      }
+
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: CarouselSlider(
+          options: CarouselOptions(
+            height: 160,
+            autoPlay: true,
+            viewportFraction: 1,
+          ),
+          items: docs.map((d) {
+            final data = d.data() as Map<String, dynamic>;
+            final url = data["image"] ??
+                "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/480px-No_image_available.svg.png";
+
+            return Image.network(url, width: double.infinity, fit: BoxFit.cover);
+          }).toList(),
+        ),
+      );
+    },
+  );
+}
+
+
   Widget _quickMenu() {
     final items = [
       {'icon': Icons.category, 'label': 'Categories'},
@@ -156,7 +147,7 @@ class HomePage extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, Colors.orange.shade400],
+                  colors: [AppColors.primary,const Color.fromARGB(255, 113, 105, 226)],
                 ),
               ),
               child: Icon(it['icon'] as IconData, color: Colors.white, size: 28),

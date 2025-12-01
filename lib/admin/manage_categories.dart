@@ -1,10 +1,12 @@
 import 'dart:io';
-import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:ecommerce_app/utils/env.dart';
+import 'package:ecommerce_app/service/cloudinary_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
+import 'package:file_picker/file_picker.dart';
 
 class ManageCategories extends StatefulWidget {
   const ManageCategories({super.key});
@@ -15,53 +17,73 @@ class ManageCategories extends StatefulWidget {
 
 class _ManageCategoriesState extends State<ManageCategories> {
   final nameCtrl = TextEditingController();
-  final editNameCtrl = TextEditingController();
+  final editCtrl = TextEditingController();
 
   File? pickedImage;
-  File? editPickedImage;
+  Uint8List? pickedBytes;
+  String? imageUrl; 
+  String? editImageUrl; 
 
-  Future<String?> uploadToCloudinary(File file) async {
-    try {
-      final url =
-          "https://api.cloudinary.com/v1_1/${Env.cloudName}/image/upload";
+  bool uploading = false;
 
-      final request = http.MultipartRequest("POST", Uri.parse(url));
-      request.fields["upload_preset"] = Env.uploadPreset;
 
-      request.files.add(await http.MultipartFile.fromPath("file", file.path));
+  Future<void> pickMobileImage(bool isEditing) async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(source: ImageSource.gallery);
 
-      final response = await request.send();
-      final body = await response.stream.bytesToString();
+    if (file == null) return;
 
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(body);
-        return jsonData["secure_url"];
-      }
-    } catch (e) {
-      print("Cloudinary error: $e");
-    }
-    return null;
+    pickedImage = File(file.path);
+    pickedBytes = await file.readAsBytes();
+
+    setState(() {});
+    await uploadToCloudinary(isEditing);
   }
 
-  Future pickCategoryImage() async {
-    final xFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (xFile != null) {
-      setState(() => pickedImage = File(xFile.path));
-    }
+  Future<void> pickWebImage(bool isEditing) async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: false,
+      withData: true,
+      type: FileType.image,
+    );
+
+    if (result == null) return;
+    pickedBytes = result.files.first.bytes;
+    pickedImage = null;
+
+    setState(() {});
+    await uploadToCloudinary(isEditing);
   }
 
-  Future pickEditCategoryImage() async {
-    final xFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (xFile != null) {
-      setState(() => editPickedImage = File(xFile.path));
+
+  Future<void> uploadToCloudinary(bool isEditing) async {
+    if (uploading) return;
+
+    setState(() => uploading = true);
+
+    String? url;
+
+    // Mobile upload (File)
+    if (!kIsWeb && pickedImage != null) {
+      url = await CloudinaryService.uploadImage(pickedImage!);
     }
+
+    // Web upload (Bytes)
+    if (kIsWeb && pickedBytes != null) {
+      url = await CloudinaryService.uploadBytes(pickedBytes!);
+    }
+
+    if (isEditing) {
+      editImageUrl = url;
+    } else {
+      imageUrl = url;
+    }
+
+    setState(() => uploading = false);
   }
 
   Future<void> addCategory() async {
-    if (nameCtrl.text.trim().isEmpty || pickedImage == null) return;
-
-    final imageUrl = await uploadToCloudinary(pickedImage!);
-    if (imageUrl == null) return;
+    if (nameCtrl.text.trim().isEmpty) return;
 
     await FirebaseFirestore.instance.collection("categories").add({
       "name": nameCtrl.text.trim(),
@@ -69,126 +91,163 @@ class _ManageCategoriesState extends State<ManageCategories> {
       "createdAt": DateTime.now(),
     });
 
-    nameCtrl.clear();
-    pickedImage = null;
-
     Navigator.pop(context);
-
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text("Category added")));
   }
 
   Future<void> updateCategory(String id) async {
-    String? updatedImageUrl;
-
-    if (editPickedImage != null) {
-      updatedImageUrl = await uploadToCloudinary(editPickedImage!);
-    }
-
     await FirebaseFirestore.instance.collection("categories").doc(id).update({
-      "name": editNameCtrl.text.trim(),
-      if (updatedImageUrl != null) "image": updatedImageUrl,
+      "name": editCtrl.text.trim(),
+      "image": editImageUrl,
     });
 
     Navigator.pop(context);
-    editPickedImage = null;
-
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text("Category updated")));
   }
 
-  Future<void> deleteCategory(String id) async {
-    await FirebaseFirestore.instance.collection("categories").doc(id).delete();
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text("Category deleted")));
-  }
-
-  void addDialog() {
-    pickedImage = null;
+  void addCategoryDialog() {
     nameCtrl.clear();
+    pickedImage = null;
+    pickedBytes = null;
+    imageUrl = null;
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Add Category"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            GestureDetector(
-              onTap: pickCategoryImage,
-              child: Container(
-                height: 120,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(10),
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setStateDialog) {
+          return AlertDialog(
+            title: const Text("Add Category"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: "Category Name"),
                 ),
-                child: pickedImage != null
-                    ? Image.file(pickedImage!, fit: BoxFit.cover)
-                    : const Center(child: Text("Tap to Upload Image")),
+                const SizedBox(height: 12),
+
+                // IMAGE PREVIEW
+                Container(
+                  height: 120,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: uploading
+                      ? const Center(child: CircularProgressIndicator())
+                      : imageUrl != null
+                          ? Image.network(imageUrl!, fit: BoxFit.cover)
+                          : pickedBytes != null
+                              ? Image.memory(pickedBytes!, fit: BoxFit.cover)
+                              : const Center(
+                                  child: Text("Select image"),
+                                ),
+                ),
+
+                const SizedBox(height: 10),
+
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.image),
+                  label: const Text("Choose Image"),
+                  onPressed: () async {
+                    if (kIsWeb) {
+                      await pickWebImage(false);
+                    } else {
+                      await pickMobileImage(false);
+                    }
+                    setStateDialog(() {});
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel")),
+              ElevatedButton(
+                onPressed: addCategory,
+                child: const Text("Add"),
               ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(labelText: "Category Name"),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel")),
-          ElevatedButton(onPressed: addCategory, child: const Text("Add")),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
 
-  void editDialog(String id, Map data) {
-    editNameCtrl.text = data["name"];
-    editPickedImage = null;
+  void editCategoryDialog(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    editCtrl.text = data["name"];
+    editImageUrl = data["image"];
+
+    pickedImage = null;
+    pickedBytes = null;
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Edit Category"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            GestureDetector(
-              onTap: pickEditCategoryImage,
-              child: Container(
-                height: 120,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(10),
+      builder: (_) => StatefulBuilder(
+        builder: (_, setStateDialog) {
+          return AlertDialog(
+            title: const Text("Edit Category"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: editCtrl,
+                  decoration: const InputDecoration(labelText: "Category Name"),
                 ),
-                child: editPickedImage != null
-                    ? Image.file(editPickedImage!, fit: BoxFit.cover)
-                    : Image.network(
-                        data["image"],
-                        fit: BoxFit.cover,
-                      ),
-              ),
+
+                const SizedBox(height: 12),
+
+                // IMAGE PREVIEW
+                Container(
+                  height: 120,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: uploading
+                      ? const Center(child: CircularProgressIndicator())
+                      : editImageUrl != null
+                          ? Image.network(editImageUrl!, fit: BoxFit.cover)
+                          : pickedBytes != null
+                              ? Image.memory(pickedBytes!, fit: BoxFit.cover)
+                              : const Center(
+                                  child: Text("Select image"),
+                                ),
+                ),
+
+                const SizedBox(height: 10),
+
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.image),
+                  label: const Text("Change Image"),
+                  onPressed: () async {
+                    if (kIsWeb) {
+                      await pickWebImage(true);
+                    } else {
+                      await pickMobileImage(true);
+                    }
+                    setStateDialog(() {});
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: editNameCtrl,
-              decoration: const InputDecoration(labelText: "Category Name"),
-            )
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel")),
-          ElevatedButton(
-            onPressed: () => updateCategory(id),
-            child: const Text("Update"),
-          ),
-        ],
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel")),
+              ElevatedButton(
+                onPressed: () => updateCategory(doc.id),
+                child: const Text("Update"),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -198,55 +257,56 @@ class _ManageCategoriesState extends State<ManageCategories> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Manage Categories"),
-        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: addDialog,
-          )
+            onPressed: addCategoryDialog,
+          ),
         ],
       ),
-
       body: StreamBuilder(
         stream: FirebaseFirestore.instance
             .collection("categories")
             .orderBy("name")
             .snapshots(),
-        builder: (_, snapshot) {
-          if (!snapshot.hasData) {
+        builder: (_, snap) {
+          if (!snap.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final categories = snapshot.data!.docs;
-
-          if (categories.isEmpty) {
-            return const Center(child: Text("No categories found"));
-          }
+          final list = snap.data!.docs;
 
           return ListView.builder(
-            itemCount: categories.length,
+            padding: const EdgeInsets.all(12),
+            itemCount: list.length,
             itemBuilder: (_, i) {
-              final cat = categories[i];
+              final cat = list[i];
               final data = cat.data() as Map<String, dynamic>;
 
               return Card(
                 child: ListTile(
-                  leading: CircleAvatar(
-                    radius: 28,
-                    backgroundImage: NetworkImage(data["image"]),
-                  ),
+                  leading: data["image"] != null
+                      ? Image.network(data["image"],
+                          width: 55, height: 55, fit: BoxFit.cover)
+                      : const Icon(Icons.image, size: 40),
 
-                  title: Text(data["name"]),
+                  title: Text(data["name"] ?? ""),
+
                   trailing: PopupMenuButton(
                     itemBuilder: (_) => const [
-                      PopupMenuItem(value: "edit", child: Text("Edit")),
-                      PopupMenuItem(value: "delete", child: Text("Delete")),
+                      PopupMenuItem(
+                          value: "edit", child: Text("Edit")),
+                      PopupMenuItem(
+                          value: "delete", child: Text("Delete")),
                     ],
                     onSelected: (value) {
                       if (value == "edit") {
-                        editDialog(cat.id, data);
+                        editCategoryDialog(cat);
                       } else {
-                        deleteCategory(cat.id);
+                        FirebaseFirestore.instance
+                            .collection("categories")
+                            .doc(cat.id)
+                            .delete();
                       }
                     },
                   ),

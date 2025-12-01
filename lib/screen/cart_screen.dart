@@ -13,10 +13,11 @@ class CartScreen extends StatelessWidget {
     final cart = Provider.of<CartProvider>(context);
 
     return Scaffold(
+      backgroundColor: AppColors.secondary,
       appBar: AppBar(
         title: const Text("My Cart"),
         centerTitle: true,
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.secondary,
       ),
 
       body: cart.items.isEmpty
@@ -31,7 +32,14 @@ class CartScreen extends StatelessWidget {
               itemCount: cart.items.length,
               itemBuilder: (_, index) {
                 final item = cart.items[index];
-                final product = item.product;
+                final p = item.product;
+
+                // Safe image logic
+                final image = (p["images"] != null &&
+                        p["images"] is List &&
+                        p["images"].isNotEmpty)
+                    ? p["images"][0]
+                    : p["image"] ?? "";
 
                 return Card(
                   elevation: 3,
@@ -40,23 +48,54 @@ class CartScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: ListTile(
-                    leading: Image.network(
-                      product['image'],
-                      width: 55,
-                      height: 55,
-                      fit: BoxFit.cover,
+                    leading: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        image,
+                        width: 55,
+                        height: 55,
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                    title: Text(product['name']),
-                    subtitle: Text("৳ ${product['price']}"),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => cart.remove(product),
+
+                    title: Text(p['name']),
+                    subtitle: Text("৳ ${p['price']}"),
+
+                    trailing: SizedBox(
+                      width: 120,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          // decrease qty
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline),
+                            onPressed: () {
+                              cart.decrease(p);
+                            },
+                          ),
+
+                          Text(
+                            "${item.quantity}",
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+
+                          // increase qty
+                          IconButton(
+                            icon: const Icon(Icons.add_circle_outline),
+                            onPressed: () {
+                              cart.increase(p);
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
               },
             ),
 
+      // Bottom checkout section
       bottomNavigationBar: cart.items.isEmpty
           ? const SizedBox()
           : Container(
@@ -73,7 +112,7 @@ class CartScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  /// TOTAL PRICE
+                  // TOTAL PRICE
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -93,7 +132,10 @@ class CartScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 12),
+
+                  // CHECKOUT BUTTON
                   SizedBox(
                     width: double.infinity,
                     height: 52,
