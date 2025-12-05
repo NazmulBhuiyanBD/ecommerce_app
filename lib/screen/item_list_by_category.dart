@@ -3,7 +3,6 @@ import 'package:ecommerce_app/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'item_details_screen.dart';
 
-// safe image getter (handles `images` list, `image` string, or missing)
 String getProductImage(Map<String, dynamic> p) {
   try {
     if (p.containsKey('images') && p['images'] is List && (p['images'] as List).isNotEmpty) {
@@ -63,7 +62,6 @@ class ItemListByCategory extends StatelessWidget {
             ),
             itemBuilder: (_, index) {
               final raw = products[index].data();
-              // normalize to Map<String,dynamic> safely
               final Map<String, dynamic> product =
                   (raw is Map<String, dynamic>) ? raw : Map<String, dynamic>.from({});
 
@@ -71,13 +69,13 @@ class ItemListByCategory extends StatelessWidget {
               final name = (product['name'] ?? 'Unnamed Product').toString();
               final priceVal = product['price'];
               final priceStr = priceVal != null ? priceVal.toString() : '0';
-
+              final productId = products[index].id;
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => ItemDetailsScreen(product: product),
+                      builder: (_) => ItemDetailsScreen(product: product,productId: productId,),
                     ),
                   );
                 },

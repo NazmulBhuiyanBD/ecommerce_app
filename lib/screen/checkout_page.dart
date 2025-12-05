@@ -17,6 +17,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   final _name = TextEditingController();
   final _phone = TextEditingController();
   final _address = TextEditingController();
+
   String _paymentMethod = "Cash on Delivery";
   bool loading = false;
 
@@ -38,21 +39,36 @@ class _CheckoutPageState extends State<CheckoutPage> {
     setState(() => loading = true);
 
     try {
+      // Prepare product list properly
+      final List<Map<String, dynamic>> productList = cart.items.map((item) {
+        final p = item.product;
+        final price = (p["price"] ?? 0).toDouble();
+        final discount = (p["discount"] ?? 0).toDouble();
+        final finalPrice = price - discount;
+
+        // safe image
+        final List imgs = p["images"] ?? [];
+        final img = imgs.isNotEmpty ? imgs[0] : p["image"];
+
+        return {
+          "productId": item.productId,
+          "name": p["name"],
+          "price": price,
+          "discount": discount,
+          "finalPrice": finalPrice,
+          "image": img,
+          "quantity": item.quantity,
+        };
+      }).toList();
+
       final orderData = {
         "userId": user.uid,
         "name": _name.text.trim(),
         "phone": _phone.text.trim(),
         "address": _address.text.trim(),
         "paymentMethod": _paymentMethod,
-        "products": cart.items
-            .map((item) => {
-                  "productId": item.product["id"],
-                  "name": item.product["name"],
-                  "price": item.product["price"],
-                  "image": item.product["image"],
-                  "quantity": item.quantity,
-                })
-            .toList(),
+        "products": productList,
+        "totalDiscount": cart.totalDiscount(),
         "totalPrice": cart.totalPrice(),
         "status": "Pending",
         "timestamp": FieldValue.serverTimestamp(),
@@ -98,6 +114,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ---------------- SHIPPING FORM ----------------
             const Text("Shipping Details",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 15),
@@ -132,20 +149,19 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
             const SizedBox(height: 25),
 
+            // ---------------- PAYMENT METHOD ----------------
             const Text("Payment Method",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
 
             DropdownButtonFormField(
-              initialValue: _paymentMethod,
+              value: _paymentMethod,
               items: const [
                 DropdownMenuItem(
                     value: "Cash on Delivery",
                     child: Text("Cash on Delivery")),
-                DropdownMenuItem(
-                    value: "Bkash", child: Text("Bkash Payment")),
-                DropdownMenuItem(
-                    value: "Nagad", child: Text("Nagad Payment")),
+                DropdownMenuItem(value: "Bkash", child: Text("Bkash Payment")),
+                DropdownMenuItem(value: "Nagad", child: Text("Nagad Payment")),
               ],
               onChanged: (value) {
                 setState(() => _paymentMethod = value.toString());
@@ -154,36 +170,66 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
             const SizedBox(height: 25),
 
+            // ---------------- ORDER SUMMARY ----------------
             const Text("Order Summary",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
 
             ...cart.items.map((item) {
               final p = item.product;
+              final List imgs = p["images"] ?? [];
+              final img = imgs.isNotEmpty ? imgs[0] : p["image"];
+
+              final price = (p["price"] ?? 0).toDouble();
+              final discount = (p["discount"] ?? 0).toDouble();
+              final finalPrice = price - discount;
+
               return ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Image.network(p["image"], width: 50),
+                leading: Image.network(img, width: 50, height: 50),
                 title: Text(p["name"]),
                 subtitle: Text(
-                    "Price: ৳${p["price"]}  |  Qty: ${item.quantity}"),
+                    "৳${finalPrice.toStringAsFixed(2)}   |   Qty: ${item.quantity}"),
               );
             }).toList(),
 
             const Divider(),
+
+            // ---------------- DISCOUNT ----------------
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Total:",
+                const Text("Total Discount:",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(
+                  "- ৳ ${cart.totalDiscount().toStringAsFixed(2)}",
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            // ---------------- TOTAL PRICE ----------------
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Total Payable:",
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text("৳ ${cart.totalPrice().toStringAsFixed(2)}",
-                    style: const TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.bold)),
+                Text(
+                  "৳ ${cart.totalPrice().toStringAsFixed(2)}",
+                  style: const TextStyle(
+                      fontSize: 22,
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold),
+                ),
               ],
             ),
 
             const SizedBox(height: 20),
 
+            // ---------------- PLACE ORDER BUTTON ----------------
             SizedBox(
               width: double.infinity,
               height: 55,
@@ -195,8 +241,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 child: loading
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text("Place Order",
-                        style:
-                            TextStyle(fontSize: 18, color: Colors.white)),
+                        style: TextStyle(fontSize: 18, color: Colors.white)),
               ),
             ),
           ],

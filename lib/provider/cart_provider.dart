@@ -5,26 +5,35 @@ class CartProvider with ChangeNotifier {
   final List<CartModel> _items = [];
   List<CartModel> get items => _items;
 
-  void addToCart(Map<String, dynamic> product) {
-    final index = _items.indexWhere((c) => c.product['id'] == product['id']);
+  // NEW UPDATED METHOD (ACCEPTS productId + productData)
+  void addToCart(String productId, Map<String, dynamic> productData) {
+    final index = _items.indexWhere((c) => c.productId == productId);
+
     if (index != -1) {
-      _items[index].quantity += 1;
+      _items[index].quantity++;
     } else {
-      _items.add(CartModel(product: product, quantity: 1));
+      _items.add(
+        CartModel(
+          productId: productId,
+          product: productData,
+          quantity: 1,
+        ),
+      );
     }
+
     notifyListeners();
   }
 
-  void increase(Map<String, dynamic> product) {
-    final i = _items.indexWhere((c) => c.product['id'] == product['id']);
+  void increase(String productId) {
+    final i = _items.indexWhere((c) => c.productId == productId);
     if (i != -1) {
       _items[i].quantity++;
       notifyListeners();
     }
   }
 
-  void decrease(Map<String, dynamic> product) {
-    final i = _items.indexWhere((c) => c.product['id'] == product['id']);
+  void decrease(String productId) {
+    final i = _items.indexWhere((c) => c.productId == productId);
     if (i != -1) {
       if (_items[i].quantity > 1) {
         _items[i].quantity--;
@@ -35,8 +44,8 @@ class CartProvider with ChangeNotifier {
     }
   }
 
-  void remove(Map<String, dynamic> product) {
-    _items.removeWhere((c) => c.product['id'] == product['id']);
+  void remove(String productId) {
+    _items.removeWhere((c) => c.productId == productId);
     notifyListeners();
   }
 
@@ -53,4 +62,13 @@ class CartProvider with ChangeNotifier {
     _items.clear();
     notifyListeners();
   }
+  double totalDiscount() {
+  double total = 0;
+  for (var c in _items) {
+    final discount = (c.product["discount"] ?? 0).toDouble();
+    total += discount * c.quantity;
+  }
+  return total;
+}
+
 }

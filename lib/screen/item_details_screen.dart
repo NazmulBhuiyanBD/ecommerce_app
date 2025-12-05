@@ -1,13 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecommerce_app/provider/cart_provider.dart';
+import 'package:ecommerce_app/screen/store_details.dart';
 import 'package:ecommerce_app/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class ItemDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> product;
+  final String productId;
 
-  const ItemDetailsScreen({super.key, required this.product});
+  const ItemDetailsScreen({
+    super.key,
+    required this.product,
+    required this.productId,
+  });
 
   @override
   State<ItemDetailsScreen> createState() => _ItemDetailsScreenState();
@@ -18,6 +24,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   int quantity = 1;
 
   String shopName = "Loading...";
+  String? shopId;
 
   @override
   void initState() {
@@ -25,36 +32,39 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
     fetchShopName();
   }
 
-Future<void> fetchShopName() async {
-  try {
-    DocumentSnapshot shop = await FirebaseFirestore.instance
-        .collection("shops")
-        .doc(widget.product["shopId"])
-        .get();
+  Future<void> fetchShopName() async {
+    try {
+      final shop = await FirebaseFirestore.instance
+          .collection("shops")
+          .doc(widget.product["shopId"])
+          .get();
 
-    setState(() {
-      shopName = shop["name"] ?? "Unknown Seller";  // FIXED HERE
-    });
-  } catch (e) {
-    setState(() {
+      setState(() {
+        shopName = shop["name"] ?? "Unknown Seller";
+        shopId = shop.id;
+      });
+    } catch (e) {
       shopName = "Unknown Seller";
-    });
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
-    final product = widget.product;
+    final p = widget.product;
 
-    final String name = product["name"] ?? "No Name";
-    final double price = (product["price"] ?? 0).toDouble();
-    final String description =
-        product["description"] ?? "No description available.";
+    final String name = p["name"] ?? "No Name";
+    final double price = (p["price"] ?? 0).toDouble();
+    final double discount = (p["discount"] ?? 0).toDouble();
 
-    final List images = product["images"] ?? [];
-    final double totalPrice = price * quantity;
+    // discount is NOT percentage — it's direct money
+    final double finalPrice = price - discount;
+
+    final int stock = p["stock"] ?? 0;
+
+    final List images = p["images"] ?? [];
+
+    final double totalPrice = finalPrice * quantity;
 
     return Scaffold(
       appBar: AppBar(
@@ -67,17 +77,15 @@ Future<void> fetchShopName() async {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ================= IMAGE GALLERY =====================
+            // ---------------- IMAGE GALLERY ----------------
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Small Images Left
+                // Small thumbnails
                 Column(
                   children: List.generate(images.length, (index) {
                     return GestureDetector(
-                      onTap: () {
-                        setState(() => selectedImage = index);
-                      },
+                      onTap: () => setState(() => selectedImage = index),
                       child: Container(
                         margin: const EdgeInsets.symmetric(vertical: 6),
                         padding: const EdgeInsets.all(3),
@@ -103,14 +111,13 @@ Future<void> fetchShopName() async {
 
                 const SizedBox(width: 10),
 
-                // Main Image
+                // Big preview image
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Image.network(
                       images.isNotEmpty ? images[selectedImage] : "",
                       height: 260,
-                      width: double.infinity,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -120,7 +127,7 @@ Future<void> fetchShopName() async {
 
             const SizedBox(height: 20),
 
-            // ================= PRODUCT NAME =====================
+            // ---------------- NAME ----------------
             Text(
               name,
               style: const TextStyle(
@@ -131,27 +138,58 @@ Future<void> fetchShopName() async {
 
             const SizedBox(height: 10),
 
-            // ================= PRICE =====================
+            // ---------------- PRICE ----------------
+            discount > 0
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "৳ ${finalPrice.toStringAsFixed(2)}",
+                        style: const TextStyle(
+                          fontSize: 22,
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        "৳ ${price.toStringAsFixed(2)}",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
+                    ],
+                  )
+                : Text(
+                    "৳ ${price.toStringAsFixed(2)}",
+                    style: const TextStyle(
+                      fontSize: 22,
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+            const SizedBox(height: 10),
+
+            // ---------------- STOCK ----------------
             Text(
-              "৳ $price",
-              style: const TextStyle(
-                fontSize: 22,
-                color: Colors.red,
+              "Stock: $stock",
+              style: TextStyle(
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
+                color: stock > 0 ? Colors.green : Colors.red,
               ),
             ),
 
             const SizedBox(height: 20),
 
-            // ================= QUANTITY SELECTOR =====================
+            // ---------------- QUANTITY ----------------
             Row(
               children: [
                 const Text(
                   "Quantity:",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(width: 15),
 
@@ -176,65 +214,77 @@ Future<void> fetchShopName() async {
                         style: const TextStyle(fontSize: 18),
                       ),
                       IconButton(
-                        onPressed: () {
-                          setState(() => quantity++);
-                        },
+                        onPressed: () => setState(() => quantity++),
                         icon: const Icon(Icons.add),
                       ),
                     ],
                   ),
-                )
+                ),
               ],
             ),
 
             const SizedBox(height: 10),
 
-            // ================= TOTAL PRICE =====================
+            // ---------------- TOTAL PRICE ----------------
             Text(
               "Total Price: ৳ ${totalPrice.toStringAsFixed(2)}",
               style: const TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.bold,
                 color: Colors.orange,
+                fontWeight: FontWeight.bold,
               ),
             ),
 
             const SizedBox(height: 25),
 
-            // ================= SELLER SECTION =====================
-            Row(
-              children: [
-                const Icon(Icons.store, size: 28),
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Seller:",
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            // ---------------- SELLER SECTION ----------------
+            GestureDetector(
+              onTap: () {
+                if (shopId != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => StoreDetailsScreen(shopId: shopId!),
                     ),
-                    Text(
-                      shopName,
-                      style: const TextStyle(fontSize: 17),
-                    ),
-                  ],
-                ),
-              ],
+                  );
+                }
+              },
+              child: Row(
+                children: [
+                  const Icon(Icons.store, size: 28),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Seller:",
+                        style:
+                            TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        shopName,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          color: Colors.blue,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
 
             const SizedBox(height: 30),
 
-            // ================= DESCRIPTION =====================
+            // ---------------- DESCRIPTION ----------------
             const Text(
               "Description:",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-
             const SizedBox(height: 10),
-
             Text(
-              description,
+              p["description"] ?? "No description available",
               style: const TextStyle(fontSize: 16),
             ),
 
@@ -242,8 +292,6 @@ Future<void> fetchShopName() async {
           ],
         ),
       ),
-
-      // ================= BOTTOM BUTTONS =====================
       bottomNavigationBar: Container(
         height: 70,
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -251,13 +299,9 @@ Future<void> fetchShopName() async {
           children: [
             Expanded(
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
                 onPressed: () {
-                  for (int i = 0; i < quantity; i++) {
-                    cart.addToCart(product);
-                  }
+                  cart.addToCart(widget.productId, p);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("Added to cart")),
                   );
@@ -268,12 +312,13 @@ Future<void> fetchShopName() async {
                 ),
               ),
             ),
+
             const SizedBox(width: 12),
+
+            // BUY NOW
             Expanded(
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                 onPressed: () {},
                 child: const Text(
                   "Buy Now",

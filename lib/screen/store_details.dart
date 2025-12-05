@@ -14,7 +14,7 @@ class StoreDetailsScreen extends StatelessWidget {
       backgroundColor: AppColors.secondary,
       appBar: AppBar(
         title: const Text("Store Details"),
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.secondary,
       ),
 
       body: FutureBuilder<DocumentSnapshot>(
@@ -24,23 +24,20 @@ class StoreDetailsScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final shop = snapshot.data!;
-          final data = shop.data() as Map<String, dynamic>? ?? {};
+          final data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
 
           final String banner = data["bannerImage"] ??
-              "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
+              "https://upload.wikimedia.org/wikipedia/commons/ac/No_image_available.svg";
 
           final String name = data["name"] ?? "No Name";
-          final String status = data["status"] ?? "N/A";
           final String description = data["description"] ?? "No Description";
-          final String ownerId = data["ownerId"] ?? "Unknown";
 
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
 
-                // ================= Banner =================
+                // STORE BANNER
                 ClipRRect(
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(10),
@@ -60,47 +57,20 @@ class StoreDetailsScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
 
-                      // ================= Name =================
                       Text(
                         name,
                         style: const TextStyle(
-                          fontSize: 24,
+                          fontSize: 26,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
 
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
 
-                      // ================= Status Badge =================
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: status == "approved"
-                              ? Colors.green.shade100
-                              : Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          "Status: $status",
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // ================= Description =================
                       const Text(
                         "Description:",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-
                       const SizedBox(height: 6),
 
                       Text(
@@ -108,28 +78,14 @@ class StoreDetailsScreen extends StatelessWidget {
                         style: const TextStyle(fontSize: 16),
                       ),
 
-                      const SizedBox(height: 20),
-
-                      Text(
-                        "Owner ID: $ownerId",
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
-                      ),
-
                       const SizedBox(height: 25),
 
-                      // ================= Store Products =================
                       const Text(
                         "Store Products",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
 
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
 
                       StreamBuilder(
                         stream: FirebaseFirestore.instance
@@ -138,61 +94,73 @@ class StoreDetailsScreen extends StatelessWidget {
                             .snapshots(),
                         builder: (context, snap) {
                           if (!snap.hasData) {
-                            return const Center(
-                                child: CircularProgressIndicator());
+                            return const Center(child: CircularProgressIndicator());
                           }
 
-                          final products = snap.data!.docs;
-
-                          if (products.isEmpty) {
+                          final items = snap.data!.docs;
+                          if (items.isEmpty) {
                             return const Text(
                               "No products available",
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.grey),
+                              style: TextStyle(color: Colors.grey, fontSize: 16),
                             );
                           }
 
                           return GridView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
-                            itemCount: products.length,
+                            itemCount: items.length,
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
                               mainAxisSpacing: 12,
                               crossAxisSpacing: 12,
-                              childAspectRatio: 0.65,
+                              childAspectRatio: 0.63,
                             ),
-                            itemBuilder: (_, index) {
-                              final p = products[index].data()
-                                  as Map<String, dynamic>? ?? {};
 
-                              final img = p["image"] ??
-                                  "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
+                            itemBuilder: (_, index) {
+                              final productId = items[index].id;
+                              final p = items[index].data() as Map<String, dynamic>;
+
+                              final List images = p["images"] ?? [];
+                              final String img = images.isNotEmpty
+                                  ? images[0]
+                                  : "https://upload.wikimedia.org/wikipedia/commons/ac/No_image_available.svg";
+
+                              final double price = (p["price"] ?? 0).toDouble();
+                              final double discount = (p["discount"] ?? 0).toDouble();
+                              final double finalPrice = price - discount;
+
+                              final int stock = p["stock"] ?? 0;
 
                               return GestureDetector(
                                 onTap: () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) =>
-                                          ItemDetailsScreen(product: p),
+                                      builder: (_) => ItemDetailsScreen(
+                                        productId: productId,
+                                        product: p,
+                                      ),
                                     ),
                                   );
                                 },
+
                                 child: Container(
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
-                                        blurRadius: 6,
+                                        blurRadius: 5,
                                         color: Colors.black12,
-                                      )
+                                      ),
                                     ],
                                   ),
+
                                   child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
+
                                       ClipRRect(
                                         borderRadius: const BorderRadius.vertical(
                                           top: Radius.circular(12),
@@ -204,31 +172,74 @@ class StoreDetailsScreen extends StatelessWidget {
                                           fit: BoxFit.cover,
                                         ),
                                       ),
+
                                       Padding(
                                         padding: const EdgeInsets.all(8),
                                         child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
+
                                             Text(
                                               p["name"] ?? "",
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
                                               style: const TextStyle(
+                                                fontSize: 13,
                                                 fontWeight: FontWeight.w600,
                                               ),
                                             ),
+
                                             const SizedBox(height: 6),
+
+                                            // PRICE
+                                            discount > 0
+                                                ? Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        "৳ ${finalPrice.toStringAsFixed(2)}",
+                                                        style: const TextStyle(
+                                                          fontSize: 15,
+                                                          color: Colors.red,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        "৳ ${price.toStringAsFixed(2)}",
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.grey,
+                                                          decoration:
+                                                              TextDecoration.lineThrough,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  )
+                                                : Text(
+                                                    "৳ ${price.toStringAsFixed(2)}",
+                                                    style: const TextStyle(
+                                                      fontSize: 15,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.orange,
+                                                    ),
+                                                  ),
+
+                                            const SizedBox(height: 6),
+
                                             Text(
-                                              "৳ ${p["price"] ?? "0"}",
-                                              style: const TextStyle(
-                                                color: Colors.orange,
+                                              "Stock: $stock",
+                                              style: TextStyle(
+                                                fontSize: 13,
                                                 fontWeight: FontWeight.bold,
+                                                color: stock > 0
+                                                    ? Colors.green
+                                                    : Colors.red,
                                               ),
                                             ),
                                           ],
                                         ),
-                                      )
+                                      ),
                                     ],
                                   ),
                                 ),

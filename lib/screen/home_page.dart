@@ -7,7 +7,6 @@ import 'package:ecommerce_app/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'item_details_screen.dart';
 
-// SAFE PRODUCT IMAGE
 String getProductImage(Map<String, dynamic> p) {
   if (p["images"] != null && p["images"] is List && p["images"].isNotEmpty) {
     return p["images"][0];
@@ -48,7 +47,6 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // ---------------- TOP BAR ----------------
   Widget _topBar(BuildContext context) {
     return Row(
       children: [
@@ -84,7 +82,6 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // ---------------- BANNER SLIDER ----------------
   Widget _bannerSlider() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
@@ -125,7 +122,6 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // ---------------- QUICK MENU ----------------
   Widget _quickMenu() {
     final items = [
       {'icon': Icons.category, 'label': 'Top Category'},
@@ -160,7 +156,6 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // ---------------- FEATURED CATEGORIES ----------------
   Widget _featuredCategories(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,117 +233,124 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // ---------------- FEATURED PRODUCTS ----------------
-  Widget _featuredProducts(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text("Featured Products",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AllProductsScreen()),
-                );
-              },
-              child: const Text("See All Products"),
+Widget _featuredProducts(BuildContext context) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text("Featured Products",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          TextButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AllProductsScreen()),
+              );
+            },
+            child: const Text("See All Products"),
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+
+      StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('products').snapshots(),
+        builder: (ctx, snap) {
+          if (!snap.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          List<QueryDocumentSnapshot> docs = snap.data!.docs;
+
+          docs.shuffle(Random());
+          docs = docs.take(5).toList();
+
+          return GridView.builder(
+            itemCount: docs.length,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 0.62,
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
+            itemBuilder: (_, i) {
+              final doc = docs[i];
+              final p = doc.data() as Map<String, dynamic>;
+              final String productId = doc.id;    // ✅ FIXED PRODUCT ID
 
-        StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('products').snapshots(),
-          builder: (ctx, snap) {
-            if (!snap.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
+              final image = getProductImage(p);
+              final price = p['price'] ?? 0;
 
-            List docs = snap.data!.docs;
-            docs.shuffle(Random());
-            docs = docs.take(5).toList();
-
-            return GridView.builder(
-              itemCount: docs.length,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.62,
-              ),
-              itemBuilder: (_, i) {
-                final p = docs[i].data() as Map<String, dynamic>;
-                final image = getProductImage(p);
-                final price = p['price'] ?? 0;
-
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => ItemDetailsScreen(product: p)),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12.withOpacity(0.05),
-                          blurRadius: 6,
-                        ),
-                      ],
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ItemDetailsScreen(
+                        product: p,
+                        productId: productId,
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              image,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-
-                        Text(
-                          p['name'] ?? "",
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w500),
-                        ),
-
-                        const SizedBox(height: 6),
-
-                        Text(
-                          "৳ $price",
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.orange,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12.withOpacity(0.05),
+                        blurRadius: 6,
+                      ),
+                    ],
                   ),
-                );
-              },
-            );
-          },
-        ),
-      ],
-    );
-  }
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            image,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      Text(
+                        p['name'] ?? "",
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w500),
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      Text(
+                        "৳ $price",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.orange,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    ],
+  );
+}
 }

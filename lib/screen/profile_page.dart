@@ -49,7 +49,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // 🔥 Upload Profile Picture to Cloudinary
+  // 🔥 Upload Profile Picture
   Future<void> pickProfileImage() async {
     final picker = ImagePicker();
     final XFile? file = await picker.pickImage(source: ImageSource.gallery);
@@ -67,8 +67,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
     loadUser();
   }
-
-  // 🔥 Add Delivery Address
   void addAddressPopup() {
     final addressCtrl = TextEditingController();
 
@@ -83,8 +81,9 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel")),
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
           ElevatedButton(
             onPressed: () async {
               if (addressCtrl.text.trim().isEmpty) return;
@@ -94,9 +93,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   .doc(user!.uid)
                   .update({"address": addressCtrl.text.trim()});
 
-              setState(() {
-                userData!["address"] = addressCtrl.text.trim();
-              });
+              setState(() => userData!["address"] = addressCtrl.text.trim());
 
               Navigator.pop(context);
             },
@@ -117,6 +114,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
     final pic = userData!["profilePic"] ?? "";
     final address = userData!["address"] ?? "";
+    final name = userData!["name"] ?? "User";
+    final email = userData!["email"] ?? "";
 
     return Scaffold(
       backgroundColor: AppColors.secondary,
@@ -144,8 +143,7 @@ class _ProfilePageState extends State<ProfilePage> {
               child: CircleAvatar(
                 radius: 55,
                 backgroundColor: Colors.grey.shade300,
-                backgroundImage:
-                    pic.isNotEmpty ? NetworkImage(pic) : null,
+                backgroundImage: pic.isNotEmpty ? NetworkImage(pic) : null,
                 child: pic.isEmpty
                     ? const Icon(Icons.camera_alt,
                         size: 40, color: Colors.grey)
@@ -156,13 +154,13 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 12),
 
             Text(
-              userData!["name"] ?? "",
+              name,
               style: const TextStyle(
                   fontSize: 20, fontWeight: FontWeight.bold),
             ),
 
             Text(
-              userData!["email"] ?? "",
+              email,
               style: const TextStyle(color: Colors.grey),
             ),
 
@@ -176,7 +174,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
             const SizedBox(height: 20),
 
-            // MENU OPTIONS
             profileMenu(Icons.receipt_long, "Order History", () {
               Navigator.push(
                 context,
@@ -197,8 +194,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
             profileMenu(Icons.notifications, "Notifications", () {}),
 
-            profileMenu(Icons.history, "Purchase History", () {}),
-
             const SizedBox(height: 20),
           ],
         ),
@@ -213,6 +208,7 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Icon(icon, color: AppColors.primary),
       ),
       title: Text(title),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
       onTap: onTap,
     );
   }
