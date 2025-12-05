@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ecommerce_app/utils/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'order_details_page.dart';
@@ -11,13 +12,13 @@ class OrderHistoryPage extends StatelessWidget {
     final userId = FirebaseAuth.instance.currentUser!.uid;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor:AppColors.secondary,
       appBar: AppBar(
         title: const Text(
           "Purchase History",
           style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.secondary,
         iconTheme: const IconThemeData(color: Colors.black),
         elevation: 0,
       ),

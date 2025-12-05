@@ -10,14 +10,14 @@ class OrderDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: AppColors.secondary,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.secondary,
         elevation: 0,
         leading: BackButton(color: Colors.black),
         title: const Text(
           "Order Details",
-          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -56,15 +56,15 @@ class OrderDetailsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildStatusIcons(currentStep),
+                buildStatusIcons(currentStep),
                 const SizedBox(height: 20),
-                _buildProgressBar(currentStep),
+                buildProgressBar(currentStep),
                 const SizedBox(height: 25),
-                _buildOrderSummary(order, orderDate),
+                buildOrderSummary(order, orderDate),
                 const SizedBox(height: 20),
-                _buildProductList(products),
+                buildProductList(products),
                 const SizedBox(height: 25),
-                _buildPriceSection(order),
+                buildPriceSection(order),
               ],
             ),
           );
@@ -72,7 +72,7 @@ class OrderDetailsPage extends StatelessWidget {
       ),
     );
   }
-  Widget _buildStatusIcons(int step) {
+  Widget buildStatusIcons(int step) {
     final icons = [
       Icons.receipt_long,
       Icons.thumb_up_alt_outlined,
@@ -114,7 +114,7 @@ class OrderDetailsPage extends StatelessWidget {
       }),
     );
   }
-  Widget _buildProgressBar(int step) {
+  Widget buildProgressBar(int step) {
     return Row(
       children: List.generate(4, (i) {
         bool active = i <= step;
@@ -131,7 +131,7 @@ class OrderDetailsPage extends StatelessWidget {
       }),
     );
   }
-  Widget _buildOrderSummary(Map<String, dynamic> order, String orderDate) {
+  Widget buildOrderSummary(Map<String, dynamic> order, String orderDate) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -141,13 +141,13 @@ class OrderDetailsPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _summaryRow("Order Code", orderId.toUpperCase(), highlight: true),
-          _summaryRow("Order Date", orderDate),
-          _summaryRow("Payment Method", order["paymentMethod"]),
-          _summaryRow("Payment Status",
+          summaryRow("Order Code", orderId.toUpperCase(), highlight: true),
+          summaryRow("Order Date", orderDate),
+          summaryRow("Payment Method", order["paymentMethod"]),
+          summaryRow("Payment Status",
               order["paymentStatus"] ?? "Pending"),
-          _summaryRow("Delivery Status", order["status"]),
-          _summaryRow("Total Amount", "৳ ${order["totalPrice"]}",
+          summaryRow("Delivery Status", order["status"]),
+          summaryRow("Total Amount", "৳ ${order["totalPrice"]}",
               highlight: true),
           const SizedBox(height: 12),
           const Text(
@@ -162,7 +162,7 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _summaryRow(String title, String value, {bool highlight = false}) {
+  Widget summaryRow(String title, String value, {bool highlight = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -182,7 +182,7 @@ class OrderDetailsPage extends StatelessWidget {
       ),
     );
   }
-  Widget _buildProductList(List products) {
+  Widget buildProductList(List products) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -238,7 +238,7 @@ class OrderDetailsPage extends StatelessWidget {
   }
 
   // ---------------------- PRICE BREAKDOWN ----------------------
-  Widget _buildPriceSection(Map<String, dynamic> order) {
+  Widget buildPriceSection(Map<String, dynamic> order) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -248,18 +248,18 @@ class OrderDetailsPage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _priceRow("SUB TOTAL", order["subtotal"] ?? order["totalPrice"]),
-          _priceRow("DISCOUNT", "-৳ ${order["totalDiscount"] ?? 0}"),
-          _priceRow("SHIPPING COST", "৳ ${(order["shipping"] ?? 0)}"),
+          priceRow("SUB TOTAL", order["subtotal"] ?? order["totalPrice"]),
+          priceRow("DISCOUNT", "-৳ ${order["totalDiscount"] ?? 0}"),
+          priceRow("SHIPPING COST", "৳ ${(order["shipping"] ?? 0)}"),
           const Divider(),
-          _priceRow("GRAND TOTAL", "৳ ${order["totalPrice"]}",
+          priceRow("GRAND TOTAL", "৳ ${order["totalPrice"]}",
               highlight: true),
         ],
       ),
     );
   }
 
-  Widget _priceRow(String title, dynamic value, {bool highlight = false}) {
+  Widget priceRow(String title, dynamic value, {bool highlight = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
