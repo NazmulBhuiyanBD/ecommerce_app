@@ -70,7 +70,6 @@ class _ManageProductsState extends State<ManageProducts> {
 
       body: Column(
         children: [
-          // SEARCH BAR
           Padding(
             padding: const EdgeInsets.all(12),
             child: TextField(

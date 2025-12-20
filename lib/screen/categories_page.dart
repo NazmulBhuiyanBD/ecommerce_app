@@ -13,10 +13,50 @@ class CategoriesPage extends StatefulWidget {
 class _CategoriesPageState extends State<CategoriesPage> {
   String query = "";
 
+  // ---------------- IMAGE HELPERS ----------------
+  bool _isNetworkImage(String path) {
+    return path.startsWith('http');
+  }
+
   String _safeImage(Map<String, dynamic> data) {
     final img = data['image'];
-    if (img != null && img.toString().isNotEmpty) return img.toString();
-    return 'https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg';
+    if (img != null && img.toString().isNotEmpty) {
+      return img.toString();
+    }
+    return "assets/images/notFound.png"; 
+  }
+
+  Widget _categoryImage(String image) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: _isNetworkImage(image)
+          ? Image.network(
+              image,
+              width: 86,
+              height: 86,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _fallbackIcon(),
+            )
+          : Image.asset(
+              image,
+              width: 86,
+              height: 86,
+              fit: BoxFit.cover,
+            ),
+    );
+  }
+
+  Widget _fallbackIcon() {
+    return Container(
+      width: 86,
+      height: 86,
+      color: Colors.grey.shade200,
+      child: const Icon(
+        Icons.category,
+        size: 36,
+        color: Colors.grey,
+      ),
+    );
   }
 
   @override
@@ -31,7 +71,6 @@ class _CategoriesPageState extends State<CategoriesPage> {
       ),
       body: Column(
         children: [
-          // Search
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Container(
@@ -40,7 +79,12 @@ class _CategoriesPageState extends State<CategoriesPage> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(30),
-                boxShadow: [BoxShadow(color: Colors.black12.withOpacity(0.03), blurRadius: 6)],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12.withOpacity(0.03),
+                    blurRadius: 6,
+                  ),
+                ],
               ),
               child: Row(
                 children: [
@@ -48,8 +92,11 @@ class _CategoriesPageState extends State<CategoriesPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
-                      decoration: const InputDecoration.collapsed(hintText: 'Search categories...'),
-                      onChanged: (v) => setState(() => query = v.trim().toLowerCase()),
+                      decoration: const InputDecoration.collapsed(
+                        hintText: 'Search categories...',
+                      ),
+                      onChanged: (v) =>
+                          setState(() => query = v.trim().toLowerCase()),
                     ),
                   ),
                 ],
@@ -57,10 +104,12 @@ class _CategoriesPageState extends State<CategoriesPage> {
             ),
           ),
 
-          // List
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('categories').orderBy('name').snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection('categories')
+                  .orderBy('name')
+                  .snapshots(),
               builder: (context, snap) {
                 if (!snap.hasData) {
                   return const Center(child: CircularProgressIndicator());
@@ -68,20 +117,27 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
                 final docs = snap.data!.docs;
                 final filtered = docs.where((d) {
-                  final name = (d['name'] ?? '').toString().toLowerCase();
+                  final name =
+                      (d['name'] ?? '').toString().toLowerCase();
                   return name.contains(query);
                 }).toList();
 
                 if (filtered.isEmpty) {
                   return Center(
-                    child: Text(query.isEmpty ? 'No categories yet' : 'No results for "$query"'),
+                    child: Text(
+                      query.isEmpty
+                          ? 'No categories yet'
+                          : 'No results for "$query"',
+                    ),
                   );
                 }
 
                 return ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   itemCount: filtered.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(height: 12),
                   itemBuilder: (context, i) {
                     final d = filtered[i];
                     final data = d.data() as Map<String, dynamic>;
@@ -89,89 +145,49 @@ class _CategoriesPageState extends State<CategoriesPage> {
                     final image = _safeImage(data);
 
                     return Card(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       elevation: 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(14),
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => ItemListByCategory(category: name)),
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ItemListByCategory(category: name),
+                            ),
                           );
                         },
-                        child: Container(
+                        child: Padding(
                           padding: const EdgeInsets.all(12),
                           child: Row(
                             children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: Image.network(
-                                  image,
-                                  width: 86,
-                                  height: 86,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
-                                    width: 86,
-                                    height: 86,
-                                    color: Colors.grey.shade200,
-                                    child: const Icon(Icons.category, size: 36, color: Colors.grey),
-                                  ),
-                                ),
-                              ),
-
+                              _categoryImage(image),
                               const SizedBox(width: 14),
-
-                              // title + small links
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       name,
-                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
-                                    const SizedBox(height: 8),
-
-                                    // sub-links row
-                                    Row(
-                                      children: [
-                                        GestureDetector(
-                                          onTap: () {
-                                            // TODO: navigate to sub-categories page if you have one
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text('View Sub-Categories tapped')),
-                                            );
-                                          },
-                                          child: Text(
-                                            'View Sub-Categories',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: Colors.grey.shade700,
-                                              decoration: TextDecoration.underline,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Text('|', style: TextStyle(color: Colors.grey.shade400)),
-                                        const SizedBox(width: 10),
-                                        GestureDetector(
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(builder: (_) => ItemListByCategory(category: name)),
-                                            );
-                                          },
-                                          child: Text(
-                                            'View Products',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: AppColors.primary,
-                                              fontWeight: FontWeight.w600,
-                                              decoration: TextDecoration.underline,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'View Products',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w600,
+                                        decoration:
+                                            TextDecoration.underline,
+                                      ),
                                     ),
                                   ],
                                 ),

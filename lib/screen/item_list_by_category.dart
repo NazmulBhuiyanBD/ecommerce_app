@@ -13,7 +13,7 @@ String getProductImage(Map<String, dynamic> p) {
       return p['image'].toString();
     }
   } catch (_) {}
-  return 'https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg';
+  return 'https://drive.google.com/file/d/1e6cz8vgwIcljKau_pnd3f3-PmTyMXIn2/view?usp=sharing';
 }
 
 class ItemListByCategory extends StatelessWidget {

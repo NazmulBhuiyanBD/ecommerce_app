@@ -3,6 +3,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecommerce_app/screen/all_products.dart';
 import 'package:ecommerce_app/screen/categories_page.dart';
+import 'package:ecommerce_app/screen/shop_list_screen.dart';
 import 'package:ecommerce_app/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'item_details_screen.dart';
@@ -14,7 +15,7 @@ String getProductImage(Map<String, dynamic> p) {
   if (p["image"] != null && p["image"].toString().isNotEmpty) {
     return p["image"];
   }
-  return "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/480px-No_image_available.svg.png";
+  return "https://drive.google.com/file/d/1e6cz8vgwIcljKau_pnd3f3-PmTyMXIn2/view?usp=sharing";
 }
 
 class HomePage extends StatelessWidget {
@@ -34,7 +35,7 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 16),
               _bannerSlider(),
               const SizedBox(height: 18),
-              _quickMenu(),
+              _quickMenu(context),
               const SizedBox(height: 20),
               _featuredCategories(context),
               const SizedBox(height: 20),
@@ -46,13 +47,22 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
+Widget _topBar(BuildContext context) {
+  return Row(
+    children: [
+      Icon(Icons.menu, size: 28, color: AppColors.primary),
+      const SizedBox(width: 12),
 
-  Widget _topBar(BuildContext context) {
-    return Row(
-      children: [
-        Icon(Icons.menu, size: 28, color: AppColors.primary),
-        const SizedBox(width: 12),
-        Expanded(
+      Expanded(
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const AllProductsScreen(),
+              ),
+            );
+          },
           child: Container(
             height: 46,
             padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -63,24 +73,29 @@ class HomePage extends StatelessWidget {
                 BoxShadow(
                   color: Colors.black12.withOpacity(0.05),
                   blurRadius: 6,
-                )
+                ),
               ],
             ),
             child: Row(
               children: const [
                 Icon(Icons.search, color: Colors.grey),
                 SizedBox(width: 8),
-                Text("Search products...",
-                    style: TextStyle(color: Colors.grey)),
+                Text(
+                  "Search products...",
+                  style: TextStyle(color: Colors.grey),
+                ),
               ],
             ),
           ),
         ),
-        const SizedBox(width: 12),
-        Icon(Icons.notifications_none, size: 28, color: AppColors.primary),
-      ],
-    );
-  }
+      ),
+
+      const SizedBox(width: 12),
+      Icon(Icons.notifications_none, size: 28, color: AppColors.primary),
+    ],
+  );
+}
+
 
   Widget _bannerSlider() {
     return StreamBuilder<QuerySnapshot>(
@@ -112,7 +127,7 @@ class HomePage extends StatelessWidget {
             items: docs.map((d) {
               final data = d.data() as Map<String, dynamic>;
               final url = data["image"] ??
-                  "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/480px-No_image_available.svg.png";
+                  "https://drive.google.com/file/d/1e6cz8vgwIcljKau_pnd3f3-PmTyMXIn2/view?usp=sharing";
 
               return Image.network(url, width: double.infinity, fit: BoxFit.cover);
             }).toList(),
@@ -122,39 +137,64 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _quickMenu() {
-    final items = [
-      {'icon': Icons.category, 'label': 'Top Category'},
-      {'icon': Icons.grade, 'label': 'Top'},
-      {'icon': Icons.store_mall_directory, 'label': 'Shops'},
-      {'icon': Icons.local_offer, 'label': 'Deals'},
-      {'icon': Icons.bolt, 'label': 'Flash'},
-    ];
+Widget _quickMenu(BuildContext context) {
+  final items = [
+    {'icon': Icons.category, 'label': 'Top Category'},
+    {'icon': Icons.grade, 'label': 'Top'},
+    {'icon': Icons.store_mall_directory, 'label': 'Shops'},
+    {'icon': Icons.local_offer, 'label': 'Deals'},
+    {'icon': Icons.bolt, 'label': 'Flash'},
+  ];
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: items.map((it) {
-        return Column(
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceAround,
+    children: items.map((it) {
+      return GestureDetector(
+        onTap: () {
+          // ✅ SHOP ICON CLICK
+          if (it['label'] == 'Shops') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const ShopListScreen(),
+              ),
+            );
+          }
+
+          // 🔜 You can add more navigation later
+          // else if (it['label'] == 'Deals') { ... }
+        },
+        child: Column(
           children: [
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, const Color(0xFF7169E2)],
+                  colors: [
+                    AppColors.primary,
+                    const Color(0xFF7169E2),
+                  ],
                 ),
               ),
-              child: Icon(it['icon'] as IconData,
-                  color: Colors.white, size: 28),
+              child: Icon(
+                it['icon'] as IconData,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
             const SizedBox(height: 6),
-            Text(it['label'] as String,
-                style: const TextStyle(fontSize: 12)),
+            Text(
+              it['label'] as String,
+              style: const TextStyle(fontSize: 12),
+            ),
           ],
-        );
-      }).toList(),
-    );
-  }
+        ),
+      );
+    }).toList(),
+  );
+}
+
 
   Widget _featuredCategories(BuildContext context) {
     return Column(
@@ -197,7 +237,7 @@ class HomePage extends StatelessWidget {
                   final d = docs[i].data() as Map<String, dynamic>;
 
                   final image = d["image"] ??
-                      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/480px-No_image_available.svg.png";
+                      "https://drive.google.com/file/d/1e6cz8vgwIcljKau_pnd3f3-PmTyMXIn2/view?usp=sharing";
 
                   return Container(
                     width: 110,
@@ -280,7 +320,7 @@ Widget _featuredProducts(BuildContext context) {
             itemBuilder: (_, i) {
               final doc = docs[i];
               final p = doc.data() as Map<String, dynamic>;
-              final String productId = doc.id;    // ✅ FIXED PRODUCT ID
+              final String productId = doc.id;    
 
               final image = getProductImage(p);
               final price = p['price'] ?? 0;

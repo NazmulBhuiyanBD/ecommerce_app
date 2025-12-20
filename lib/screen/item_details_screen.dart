@@ -39,37 +39,37 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
           .doc(widget.product["shopId"])
           .get();
 
-      setState(() {
-        shopName = shop["name"] ?? "Unknown Seller";
-        shopId = shop.id;
-      });
-    } catch (e) {
-      shopName = "Unknown Seller";
+      if (shop.exists) {
+        setState(() {
+          shopName = shop.data()?["name"] ?? "Unknown Seller";
+          shopId = shop.id;
+        });
+      }
+    } catch (_) {
+      setState(() => shopName = "Unknown Seller");
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final cart = Provider.of<CartProvider>(context);
+    final cart = context.read<CartProvider>();
     final p = widget.product;
 
     final String name = p["name"] ?? "No Name";
     final double price = (p["price"] ?? 0).toDouble();
     final double discount = (p["discount"] ?? 0).toDouble();
-
-    // discount is NOT percentage — it's direct money
     final double finalPrice = price - discount;
-
     final int stock = p["stock"] ?? 0;
-
     final List images = p["images"] ?? [];
 
     final double totalPrice = finalPrice * quantity;
 
     return Scaffold(
+      backgroundColor: AppColors.secondary, // ✅ FIXED BACKGROUND
       appBar: AppBar(
         title: Text(name),
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.secondary,
+        elevation: 0,
       ),
 
       body: SingleChildScrollView(
@@ -77,11 +77,10 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ---------------- IMAGE GALLERY ----------------
+            // ---------------- IMAGE SECTION ----------------
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Small thumbnails
                 Column(
                   children: List.generate(images.length, (index) {
                     return GestureDetector(
@@ -92,7 +91,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                         decoration: BoxDecoration(
                           border: Border.all(
                             color: selectedImage == index
-                                ? Colors.orange
+                                ? AppColors.primary
                                 : Colors.grey.shade300,
                             width: 2,
                           ),
@@ -111,12 +110,13 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
 
                 const SizedBox(width: 10),
 
-                // Big preview image
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Image.network(
-                      images.isNotEmpty ? images[selectedImage] : "",
+                      images.isNotEmpty
+                          ? images[selectedImage]
+                          : "https://via.placeholder.com/300",
                       height: 260,
                       fit: BoxFit.cover,
                     ),
@@ -130,10 +130,9 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
             // ---------------- NAME ----------------
             Text(
               name,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 10),
@@ -174,7 +173,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
 
             // ---------------- STOCK ----------------
             Text(
-              "Stock: $stock",
+              stock > 0 ? "In Stock: $stock" : "Out of Stock",
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -202,11 +201,9 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                   child: Row(
                     children: [
                       IconButton(
-                        onPressed: () {
-                          if (quantity > 1) {
-                            setState(() => quantity--);
-                          }
-                        },
+                        onPressed: quantity > 1
+                            ? () => setState(() => quantity--)
+                            : null,
                         icon: const Icon(Icons.remove),
                       ),
                       Text(
@@ -214,7 +211,9 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                         style: const TextStyle(fontSize: 18),
                       ),
                       IconButton(
-                        onPressed: () => setState(() => quantity++),
+                        onPressed: quantity < stock
+                            ? () => setState(() => quantity++)
+                            : null,
                         icon: const Icon(Icons.add),
                       ),
                     ],
@@ -225,7 +224,6 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
 
             const SizedBox(height: 10),
 
-            // ---------------- TOTAL PRICE ----------------
             Text(
               "Total Price: ৳ ${totalPrice.toStringAsFixed(2)}",
               style: const TextStyle(
@@ -237,18 +235,18 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
 
             const SizedBox(height: 25),
 
-            // ---------------- SELLER SECTION ----------------
+            // ---------------- SELLER ----------------
             GestureDetector(
-              onTap: () {
-                if (shopId != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => StoreDetailsScreen(shopId: shopId!),
-                    ),
-                  );
-                }
-              },
+              onTap: shopId == null
+                  ? null
+                  : () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StoreDetailsScreen(shopId: shopId!),
+                        ),
+                      );
+                    },
               child: Row(
                 children: [
                   const Icon(Icons.store, size: 28),
@@ -258,8 +256,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                     children: [
                       const Text(
                         "Seller:",
-                        style:
-                            TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
                       ),
                       Text(
                         shopName,
@@ -292,20 +290,30 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
           ],
         ),
       ),
+
+      // ---------------- BOTTOM BAR ----------------
       bottomNavigationBar: Container(
         height: 70,
         padding: const EdgeInsets.symmetric(horizontal: 12),
+        color: AppColors.secondary,
         child: Row(
           children: [
             Expanded(
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                onPressed: () {
-                  cart.addToCart(widget.productId, p);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Added to cart")),
-                  );
-                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                ),
+                onPressed: stock == 0
+                    ? null
+                    : () {
+                        cart.addToCart(
+                          widget.productId,
+                          {...p, "quantity": quantity},
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Added to cart")),
+                        );
+                      },
                 child: const Text(
                   "Add to Cart",
                   style: TextStyle(fontSize: 18, color: Colors.white),
@@ -315,11 +323,10 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
 
             const SizedBox(width: 12),
 
-            // BUY NOW
             Expanded(
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                onPressed: () {},
+                onPressed: stock == 0 ? null : () {},
                 child: const Text(
                   "Buy Now",
                   style: TextStyle(fontSize: 18, color: Colors.white),

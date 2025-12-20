@@ -21,26 +21,28 @@ class _ManageCategoriesState extends State<ManageCategories> {
 
   File? pickedImage;
   Uint8List? pickedBytes;
-  String? imageUrl; 
-  String? editImageUrl; 
+
+  String? imageUrl;
+  String? editImageUrl;
 
   bool uploading = false;
 
-
-  Future<void> pickMobileImage(bool isEditing) async {
+  Future<void> pickMobileImage(bool isEditing,
+      void Function(void Function()) setDialogState) async {
     final picker = ImagePicker();
     final file = await picker.pickImage(source: ImageSource.gallery);
 
     if (file == null) return;
 
     pickedImage = File(file.path);
-    pickedBytes = await file.readAsBytes();
+    pickedBytes = null;
 
-    setState(() {});
-    await uploadToCloudinary(isEditing);
+    setDialogState(() {});
+    await uploadToCloudinary(isEditing, setDialogState);
   }
 
-  Future<void> pickWebImage(bool isEditing) async {
+  Future<void> pickWebImage(bool isEditing,
+      void Function(void Function()) setDialogState) async {
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: false,
       withData: true,
@@ -48,27 +50,24 @@ class _ManageCategoriesState extends State<ManageCategories> {
     );
 
     if (result == null) return;
+
     pickedBytes = result.files.first.bytes;
     pickedImage = null;
 
-    setState(() {});
-    await uploadToCloudinary(isEditing);
+    setDialogState(() {});
+    await uploadToCloudinary(isEditing, setDialogState);
   }
 
-
-  Future<void> uploadToCloudinary(bool isEditing) async {
-    if (uploading) return;
-
-    setState(() => uploading = true);
+  Future<void> uploadToCloudinary(bool isEditing,
+      void Function(void Function()) setDialogState) async {
+    setDialogState(() => uploading = true);
 
     String? url;
 
-    // Mobile upload (File)
     if (!kIsWeb && pickedImage != null) {
       url = await CloudinaryService.uploadImage(pickedImage!);
     }
 
-    // Web upload (Bytes)
     if (kIsWeb && pickedBytes != null) {
       url = await CloudinaryService.uploadBytes(pickedBytes!);
     }
@@ -79,8 +78,9 @@ class _ManageCategoriesState extends State<ManageCategories> {
       imageUrl = url;
     }
 
-    setState(() => uploading = false);
+    setDialogState(() => uploading = false);
   }
+
 
   Future<void> addCategory() async {
     if (nameCtrl.text.trim().isEmpty) return;
@@ -95,6 +95,7 @@ class _ManageCategoriesState extends State<ManageCategories> {
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text("Category added")));
   }
+
 
   Future<void> updateCategory(String id) async {
     await FirebaseFirestore.instance.collection("categories").doc(id).update({
@@ -115,66 +116,60 @@ class _ManageCategoriesState extends State<ManageCategories> {
 
     showDialog(
       context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (ctx, setStateDialog) {
-          return AlertDialog(
-            title: const Text("Add Category"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: "Category Name"),
-                ),
-                const SizedBox(height: 12),
+      builder: (_) => StatefulBuilder(builder: (ctx, setDialogState) {
+        return AlertDialog(
+          title: const Text("Add Category"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(labelText: "Category Name"),
+              ),
+              const SizedBox(height: 12),
 
-                // IMAGE PREVIEW
-                Container(
-                  height: 120,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: uploading
-                      ? const Center(child: CircularProgressIndicator())
-                      : imageUrl != null
-                          ? Image.network(imageUrl!, fit: BoxFit.cover)
-                          : pickedBytes != null
-                              ? Image.memory(pickedBytes!, fit: BoxFit.cover)
-                              : const Center(
-                                  child: Text("Select image"),
-                                ),
+              Container(
+                height: 120,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(10),
                 ),
+                child: uploading
+                    ? const Center(child: CircularProgressIndicator())
+                    : imageUrl != null
+                        ? Image.network(imageUrl!, fit: BoxFit.cover)
+                        : pickedBytes != null
+                            ? Image.memory(pickedBytes!, fit: BoxFit.cover)
+                            : const Center(child: Text("Select image")),
+              ),
 
-                const SizedBox(height: 10),
+              const SizedBox(height: 10),
 
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.image),
-                  label: const Text("Choose Image"),
-                  onPressed: () async {
-                    if (kIsWeb) {
-                      await pickWebImage(false);
-                    } else {
-                      await pickMobileImage(false);
-                    }
-                    setStateDialog(() {});
-                  },
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancel")),
-              ElevatedButton(
-                onPressed: addCategory,
-                child: const Text("Add"),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.image),
+                label: const Text("Choose Image"),
+                onPressed: () async {
+                  if (kIsWeb) {
+                    await pickWebImage(false, setDialogState);
+                  } else {
+                    await pickMobileImage(false, setDialogState);
+                  }
+                },
               ),
             ],
-          );
-        },
-      ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel")),
+            ElevatedButton(
+              onPressed: addCategory,
+              child: const Text("Add"),
+            ),
+          ],
+        );
+      }),
     );
   }
 
@@ -188,69 +183,63 @@ class _ManageCategoriesState extends State<ManageCategories> {
 
     showDialog(
       context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (_, setStateDialog) {
-          return AlertDialog(
-            title: const Text("Edit Category"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: editCtrl,
-                  decoration: const InputDecoration(labelText: "Category Name"),
+      builder: (_) => StatefulBuilder(builder: (_, setDialogState) {
+        return AlertDialog(
+          title: const Text("Edit Category"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: editCtrl,
+                decoration: const InputDecoration(labelText: "Category Name"),
+              ),
+              const SizedBox(height: 12),
+
+              Container(
+                height: 120,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(10),
                 ),
+                child: uploading
+                    ? const Center(child: CircularProgressIndicator())
+                    : editImageUrl != null
+                        ? Image.network(editImageUrl!, fit: BoxFit.cover)
+                        : pickedBytes != null
+                            ? Image.memory(pickedBytes!, fit: BoxFit.cover)
+                            : const Center(child: Text("Select image")),
+              ),
 
-                const SizedBox(height: 12),
+              const SizedBox(height: 10),
 
-                // IMAGE PREVIEW
-                Container(
-                  height: 120,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: uploading
-                      ? const Center(child: CircularProgressIndicator())
-                      : editImageUrl != null
-                          ? Image.network(editImageUrl!, fit: BoxFit.cover)
-                          : pickedBytes != null
-                              ? Image.memory(pickedBytes!, fit: BoxFit.cover)
-                              : const Center(
-                                  child: Text("Select image"),
-                                ),
-                ),
-
-                const SizedBox(height: 10),
-
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.image),
-                  label: const Text("Change Image"),
-                  onPressed: () async {
-                    if (kIsWeb) {
-                      await pickWebImage(true);
-                    } else {
-                      await pickMobileImage(true);
-                    }
-                    setStateDialog(() {});
-                  },
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancel")),
-              ElevatedButton(
-                onPressed: () => updateCategory(doc.id),
-                child: const Text("Update"),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.image),
+                label: const Text("Change Image"),
+                onPressed: () async {
+                  if (kIsWeb) {
+                    await pickWebImage(true, setDialogState);
+                  } else {
+                    await pickMobileImage(true, setDialogState);
+                  }
+                },
               ),
             ],
-          );
-        },
-      ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel")),
+            ElevatedButton(
+              onPressed: () => updateCategory(doc.id),
+              child: const Text("Update"),
+            ),
+          ],
+        );
+      }),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -286,18 +275,18 @@ class _ManageCategoriesState extends State<ManageCategories> {
               return Card(
                 child: ListTile(
                   leading: data["image"] != null
-                      ? Image.network(data["image"],
-                          width: 55, height: 55, fit: BoxFit.cover)
+                      ? Image.network(
+                          data["image"],
+                          width: 55,
+                          height: 55,
+                          fit: BoxFit.cover,
+                        )
                       : const Icon(Icons.image, size: 40),
-
                   title: Text(data["name"] ?? ""),
-
                   trailing: PopupMenuButton(
                     itemBuilder: (_) => const [
-                      PopupMenuItem(
-                          value: "edit", child: Text("Edit")),
-                      PopupMenuItem(
-                          value: "delete", child: Text("Delete")),
+                      PopupMenuItem(value: "edit", child: Text("Edit")),
+                      PopupMenuItem(value: "delete", child: Text("Delete")),
                     ],
                     onSelected: (value) {
                       if (value == "edit") {

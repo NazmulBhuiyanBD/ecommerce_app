@@ -58,6 +58,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           "finalPrice": finalPrice,
           "image": img,
           "quantity": item.quantity,
+           "shopId": p["shopId"],
         };
       }).toList();
 
@@ -210,7 +211,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
             ),
             const SizedBox(height: 8),
 
-            // ---------------- TOTAL PRICE ----------------
+  
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -229,7 +230,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
             const SizedBox(height: 20),
 
-            // ---------------- PLACE ORDER BUTTON ----------------
+
             SizedBox(
               width: double.infinity,
               height: 55,

@@ -48,24 +48,50 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.secondary,
-      appBar: AppBar(
-        backgroundColor: AppColors.secondary,
-        elevation: 0,
-        leading: const BackButton(color: Colors.black),
-        title: TextField(
-          decoration: const InputDecoration(
-            hintText: "Search product...",
-            border: InputBorder.none,
-          ),
-          onChanged: (value) => setState(() => searchQuery = value.toLowerCase()),
+appBar: AppBar(
+  backgroundColor: AppColors.secondary,
+  elevation: 0,
+  leading: const BackButton(color: Colors.black),
+  title: Container(
+    height: 42,
+    padding: const EdgeInsets.symmetric(horizontal: 14),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(30),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black12.withOpacity(0.05),
+          blurRadius: 6,
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list, color: Colors.black),
-            onPressed: showSortOptions,
-          )
-        ],
-      ),
+      ],
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.search, color: Colors.grey),
+        const SizedBox(width: 8),
+        Expanded(
+          child: TextField(
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: "Search products...",
+              border: InputBorder.none,
+              isDense: true,
+            ),
+            onChanged: (value) =>
+                setState(() => searchQuery = value.toLowerCase()),
+          ),
+        ),
+      ],
+    ),
+  ),
+  actions: [
+    IconButton(
+      icon: const Icon(Icons.filter_list, color: Colors.black),
+      onPressed: showSortOptions,
+    ),
+  ],
+),
+
 
       body: Column(
         children: [
@@ -113,7 +139,7 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                     final List imgs = data["images"] ?? [];
                     final String image = imgs.isNotEmpty
                         ? imgs[0]
-                        : "https://upload.wikimedia.org/wikipedia/commons/ac/No_image_available.svg";
+                        : "https://drive.google.com/file/d/1e6cz8vgwIcljKau_pnd3f3-PmTyMXIn2/view?usp=sharing";
 
                     return _productCard(context, productId, data, image, cart);
                   },
@@ -298,7 +324,7 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
 
 Widget _categoryTabs() {
   return SizedBox(
-    height: 45,
+    height: 50,
     child: StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection("categories").snapshots(),
       builder: (_, snap) {
@@ -307,14 +333,16 @@ Widget _categoryTabs() {
         final docs = snap.data!.docs;
 
         List<String> categories = ["All"];
-
-        // FIXED LINE
         categories.addAll(
-          docs.map((d) => (d["name"] ?? "").toString())
+          docs.map((d) => (d["name"] ?? "").toString()),
         );
 
         return ListView.builder(
           scrollDirection: Axis.horizontal,
+
+          // ✅ THIS FIXES THE LEFT GAP ISSUE
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+
           itemCount: categories.length,
           itemBuilder: (_, i) {
             final c = categories[i];
@@ -324,17 +352,19 @@ Widget _categoryTabs() {
               onTap: () => setState(() => selectedCategory = c),
               child: Container(
                 margin: const EdgeInsets.only(right: 10),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: isSelected ? AppColors.primary : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(22),
                   border: Border.all(color: AppColors.primary),
                 ),
                 child: Text(
                   c,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : AppColors.primary,
-                    fontWeight: FontWeight.bold,
+                    color:
+                        isSelected ? Colors.white : AppColors.primary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -345,6 +375,7 @@ Widget _categoryTabs() {
     ),
   );
 }
+
 
   void showSortOptions() {
     showModalBottomSheet(

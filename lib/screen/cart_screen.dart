@@ -45,7 +45,7 @@ class CartScreen extends StatelessWidget {
                 final String img = images.isNotEmpty
                     ? images[0]
                     : p["image"] ??
-                        "https://upload.wikimedia.org/wikipedia/commons/ac/No_image_available.svg";
+                        "https://drive.google.com/file/d/1e6cz8vgwIcljKau_pnd3f3-PmTyMXIn2/view?usp=sharing";
 
                 return Card(
                   elevation: 3,

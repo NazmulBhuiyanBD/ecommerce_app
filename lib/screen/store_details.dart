@@ -27,7 +27,7 @@ class StoreDetailsScreen extends StatelessWidget {
           final data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
 
           final String banner = data["bannerImage"] ??
-              "https://upload.wikimedia.org/wikipedia/commons/ac/No_image_available.svg";
+              "https://drive.google.com/file/d/1e6cz8vgwIcljKau_pnd3f3-PmTyMXIn2/view?usp=sharing";
 
           final String name = data["name"] ?? "No Name";
           final String description = data["description"] ?? "No Description";
@@ -124,7 +124,7 @@ class StoreDetailsScreen extends StatelessWidget {
                               final List images = p["images"] ?? [];
                               final String img = images.isNotEmpty
                                   ? images[0]
-                                  : "https://upload.wikimedia.org/wikipedia/commons/ac/No_image_available.svg";
+                                  : "https://drive.google.com/file/d/1e6cz8vgwIcljKau_pnd3f3-PmTyMXIn2/view?usp=sharing";
 
                               final double price = (p["price"] ?? 0).toDouble();
                               final double discount = (p["discount"] ?? 0).toDouble();
