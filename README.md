@@ -3,7 +3,25 @@
 A complete **Flutter-based E-Commerce mobile application** supporting **Customers, Shop Owners, and Admins**.  
 The system includes **product management, cart & checkout, online payment integration (test mode)**, and **role-based dashboards** powered by **Firebase**.
 
----
+## ⚙️ Environment Setup (Required)
+
+To run this project, you must create the following file:
+root/
+└── lib/
+└── utils/
+└── env.dart
+
+### 📄 `env.dart` Content
+
+```dart
+class Env {
+  static const String cloudName = "Your Cloudinary Cloud Name";
+  static const String uploadPreset = "Your Cloudinary Upload Preset";
+
+  static const String sslstore_id = "Your SSLCommerz Store ID";
+  static const String sslstore_passwd = "Your SSLCommerz Password";
+}
+
 
 ## 📱 Application Screenshots
 
@@ -20,7 +38,7 @@ All screenshots are available inside the **`/ScreenShot`** folder.
 - Shop Owner Dashboard & Product Management
 - Admin Dashboard & System Management
 
----
+
 
 ## 👥 User Roles & Features
 
@@ -36,7 +54,7 @@ All screenshots are available inside the **`/ScreenShot`** folder.
 - Track order status
 - Manage profile
 
----
+
 
 ### 🏪 Shop Owner
 - Automatic shop creation (if not exists)
@@ -45,7 +63,7 @@ All screenshots are available inside the **`/ScreenShot`** folder.
 - View shop-specific orders
 - Dashboard with quick-access tiles
 
----
+
 
 ### 🛠 Admin
 - Dashboard overview
@@ -59,7 +77,7 @@ All screenshots are available inside the **`/ScreenShot`** folder.
 - Enable / disable users
 - Monitor overall platform activity
 
----
+
 
 ## 💳 Payment Integration (Test Mode)
 
@@ -71,7 +89,7 @@ Integrated online payment gateways **for testing purposes only**:
 
 > Production credentials can be configured later.
 
----
+
 
 ## 🧰 Tech Stack
 
@@ -86,7 +104,7 @@ Integrated online payment gateways **for testing purposes only**:
   - `nagad_payment_gateway`
   - `flutter_sslcommerz`
 
----
+
 
 ## 📸 Screenshots
 
@@ -95,14 +113,14 @@ Integrated online payment gateways **for testing purposes only**:
 |:-----:|:--------:|
 | ![Login](ScreenShot/loginscreen.png) | ![Register](ScreenShot/registration.png) |
 
----
+
 
 ### 🏠 Onboarding
 | Onboarding 1 | Onboarding 2 |
 |:------------:|:------------:|
 | ![Onboarding 1](ScreenShot/onBroadingScreen1.png) | ![Onboarding 2](ScreenShot/onBroadingScreen2.png) |
 
----
+
 
 ### 🛍 Customer Flow
 | Home | All Products | Product Details |
@@ -117,14 +135,14 @@ Integrated online payment gateways **for testing purposes only**:
 |:----------------:|:----------------:|
 | ![History](ScreenShot/purchase_history.png) | ![Profile](ScreenShot/customerProfile.png) |
 
----
+
 
 ### 🏪 Shop Owner
 | Dashboard | Products | Settings |
 |:---------:|:--------:|:--------:|
 | ![Dashboard](ScreenShot/shop_owner_dashboard.png) | ![Products](ScreenShot/shop_owner_product.png) | ![Settings](ScreenShot/shop_setting.png) |
 
----
+
 
 ### 🛠 Admin Panel
 | Dashboard | Categories |
@@ -139,7 +157,7 @@ Integrated online payment gateways **for testing purposes only**:
 |:------:|:-----:|
 | ![Stores](ScreenShot/admin_storeList.png) | ![Users](ScreenShot/all_userList.png) |
 
----
+
 
 ## 🚀 Future Improvements
 - Production payment credentials
