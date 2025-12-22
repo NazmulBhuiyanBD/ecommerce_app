@@ -99,30 +99,30 @@ Production credentials can be added later.
 ## 📸 Screenshots
 
 ### 🔐 Authentication
-![Login](Screenshot/loginscreen.png)
-![Register](Screenshot/registration.png)
+![Login](ScreenShot/loginscreen.png)
+![Register](ScreenShot/registration.png)
 
 ### 🏠 Onboarding
-![Onboarding 1](Screenshot/onBroadingScreen1.png)
-![Onboarding 2](Screenshot/onBroadingScreen2.png)
+![Onboarding 1](ScreenShot/onBroadingScreen1.png)
+![Onboarding 2](ScreenShot/onBroadingScreen2.png)
 
 ### 🛍 Customer Flow
-![All Products](Screenshot/all_product.png)
-![Product Details](Screenshot/product_details.png)
-![Online Payment](Screenshot/online_Payment.png)
-![Order Details](Screenshot/order_details.png)
-![Purchase History](Screenshot/purchase_history.png)
-![Customer Profile](Screenshot/customerProfile.png)
+![All Products](ScreenShot/all_product.png)
+![Product Details](ScreenShot/product_details.png)
+![Online Payment](ScreenShot/online_Payment.png)
+![Order Details](ScreenShot/order_details.png)
+![Purchase History](ScreenShot/purchase_history.png)
+![Customer Profile](ScreenShot/customerProfile.png)
 
 ### 🏪 Shop Owner
-![Shop Owner Dashboard](Screenshot/shop_owner_dashboard.png)
-![Shop Products](Screenshot/shop_owner_product.png)
-![Shop Settings](Screenshot/shop_setting.png)
+![Shop Owner Dashboard](ScreenShot/shop_owner_dashboard.png)
+![Shop Products](ScreenShot/shop_owner_product.png)
+![Shop Settings](ScreenShot/shop_setting.png)
 
 ### 🛠 Admin Panel
-![Admin Dashboard](Screenshot/adminDashboard.png)
-![Manage Categories](Screenshot/admin_manageCategory.png)
-![Manage Orders](Screenshot/admin_managerOrder.png)
-![Manage Products](Screenshot/admin_productList.png)
-![Store List](Screenshot/admin_storeList.png)
-![User List](Screenshot/all_userList.png)
+![Admin Dashboard](ScreenShot/adminDashboard.png)
+![Manage Categories](ScreenShot/admin_manageCategory.png)
+![Manage Orders](ScreenShot/admin_managerOrder.png)
+![Manage Products](ScreenShot/admin_productList.png)
+![Store List](ScreenShot/admin_storeList.png)
+![User List](ScreenShot/all_userList.png)
