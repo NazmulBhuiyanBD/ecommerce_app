@@ -13,7 +13,6 @@ root/
 
 ### 📄 `env.dart` Content
 
-```dart
 class Env {
   static const String cloudName = "Your Cloudinary Cloud Name";
   static const String uploadPreset = "Your Cloudinary Upload Preset";
