@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecommerce_app/service/cloudinary_service.dart';
+import 'package:ecommerce_app/utils/app_colors.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -244,6 +245,7 @@ class _ManageCategoriesState extends State<ManageCategories> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.secondary,
       appBar: AppBar(
         title: const Text("Manage Categories"),
         actions: [
@@ -252,6 +254,7 @@ class _ManageCategoriesState extends State<ManageCategories> {
             onPressed: addCategoryDialog,
           ),
         ],
+        backgroundColor: AppColors.secondary,
       ),
       body: StreamBuilder(
         stream: FirebaseFirestore.instance
@@ -270,7 +273,7 @@ class _ManageCategoriesState extends State<ManageCategories> {
             itemCount: list.length,
             itemBuilder: (_, i) {
               final cat = list[i];
-              final data = cat.data() as Map<String, dynamic>;
+              final data = cat.data();
 
               return Card(
                 child: ListTile(

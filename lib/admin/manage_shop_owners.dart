@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ecommerce_app/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class ManageShopOwners extends StatelessWidget {
@@ -33,7 +34,9 @@ class ManageShopOwners extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Shop Owners")),
+      backgroundColor: AppColors.secondary,
+      appBar: AppBar(title: const Text("Shop Owners"),
+      backgroundColor: AppColors.secondary,),
       body: StreamBuilder(
         stream: FirebaseFirestore.instance
             .collection("users")

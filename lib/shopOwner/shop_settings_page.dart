@@ -27,27 +27,56 @@ class _ShopSettingsPageState extends State<ShopSettingsPage> {
   @override
   void initState() {
     super.initState();
-    loadShopData();
+    initShop();
   }
 
-  Future<void> loadShopData() async {
+  /// ---------------- CREATE OR LOAD SHOP ----------------
+  Future<void> initShop() async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
-    final userDoc = await FirebaseFirestore.instance.collection("users").doc(uid).get();
-    shopId = userDoc["shopId"];
 
-    final shopDoc = await FirebaseFirestore.instance.collection("shops").doc(shopId).get();
+    final userRef =
+        FirebaseFirestore.instance.collection("users").doc(uid);
+    final userDoc = await userRef.get();
 
-    name.text = shopDoc["name"] ?? "";
-    description.text = shopDoc["description"] ?? "";
-    bannerImage.text = shopDoc["bannerImage"] ?? "";
+    shopId = (userDoc.data()?["shopId"] ?? "").toString();
+
+    // 🔴 NO SHOP → CREATE ONE
+    if (shopId.isEmpty) {
+      final shopRef =
+          FirebaseFirestore.instance.collection("shops").doc();
+
+      await shopRef.set({
+        "name": "My Shop",
+        "description": "",
+        "bannerImage": "",
+        "ownerId": uid,
+        "status": "pending",
+        "createdAt": FieldValue.serverTimestamp(),
+      });
+
+      shopId = shopRef.id;
+
+      // assign shopId to user
+      await userRef.update({"shopId": shopId});
+    }
+
+    // Load shop data
+    final shopDoc = await FirebaseFirestore.instance
+        .collection("shops")
+        .doc(shopId)
+        .get();
+
+    name.text = shopDoc.data()?["name"] ?? "";
+    description.text = shopDoc.data()?["description"] ?? "";
+    bannerImage.text = shopDoc.data()?["bannerImage"] ?? "";
 
     setState(() => loading = false);
   }
 
+  /// ---------------- IMAGE PICK & UPLOAD ----------------
   Future<void> pickBannerImage() async {
-    if (loading) return;
-
-    final XFile? file = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final XFile? file =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
     if (file == null) return;
 
     setState(() => pickedImage = File(file.path));
@@ -55,37 +84,39 @@ class _ShopSettingsPageState extends State<ShopSettingsPage> {
     final url = await uploadToCloudinary(pickedImage!);
     if (url == null) return;
 
-    setState(() => bannerImage.text = url);
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Banner Image Uploaded Successfully")),
-      );
-    }
+    bannerImage.text = url;
   }
 
   Future<String?> uploadToCloudinary(File file) async {
     try {
-      final uploadUrl = "https://api.cloudinary.com/v1_1/${Env.cloudName}/image/upload";
-      final request = http.MultipartRequest("POST", Uri.parse(uploadUrl));
+      final uploadUrl =
+          "https://api.cloudinary.com/v1_1/${Env.cloudName}/image/upload";
+
+      final request =
+          http.MultipartRequest("POST", Uri.parse(uploadUrl));
+
       request.fields["upload_preset"] = Env.uploadPreset;
-      request.files.add(await http.MultipartFile.fromPath("file", file.path));
+      request.files
+          .add(await http.MultipartFile.fromPath("file", file.path));
 
       final response = await request.send();
-      final resBody = await response.stream.bytesToString();
+      final body = await response.stream.bytesToString();
 
       if (response.statusCode == 200) {
-        final jsonData = jsonDecode(resBody);
-        return jsonData["secure_url"];
+        return jsonDecode(body)["secure_url"];
       }
     } catch (_) {}
     return null;
   }
 
+  /// ---------------- UPDATE SHOP ----------------
   Future<void> updateShop() async {
     setState(() => loading = true);
 
-    await FirebaseFirestore.instance.collection("shops").doc(shopId).update({
+    await FirebaseFirestore.instance
+        .collection("shops")
+        .doc(shopId)
+        .update({
       "name": name.text.trim(),
       "description": description.text.trim(),
       "bannerImage": bannerImage.text.trim(),
@@ -95,11 +126,12 @@ class _ShopSettingsPageState extends State<ShopSettingsPage> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Shop Settings Updated")),
+        const SnackBar(content: Text("Shop updated successfully")),
       );
     }
   }
 
+  /// ---------------- UI ----------------
   @override
   Widget build(BuildContext context) {
     if (loading) {
@@ -110,46 +142,36 @@ class _ShopSettingsPageState extends State<ShopSettingsPage> {
 
     return Scaffold(
       backgroundColor: AppColors.secondary,
-      appBar: AppBar(title: const Text("Shop Settings"),
-      backgroundColor: AppColors.secondary,),
+      appBar: AppBar(
+        title: const Text("Shop Settings"),
+        backgroundColor: AppColors.secondary,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: ListView(
           children: [
-            Center(
-              child: Column(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: pickedImage != null
-                        ? Image.file(
-                            pickedImage!,
-                            height: 180,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          )
-                        : (bannerImage.text.isNotEmpty
-                            ? Image.network(
-                                bannerImage.text,
-                                height: 180,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              )
-                            : Container(
-                                height: 180,
-                                width: double.infinity,
-                                color: Colors.grey.shade300,
-                                child: const Center(child: Text("No Banner Selected")),
-                              )),
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: pickBannerImage,
-                    icon: const Icon(Icons.image),
-                    label: const Text("Choose Banner Image"),
-                  ),
-                ],
-              ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: pickedImage != null
+                  ? Image.file(pickedImage!, height: 180, fit: BoxFit.cover)
+                  : bannerImage.text.isNotEmpty
+                      ? Image.network(
+                          bannerImage.text,
+                          height: 180,
+                          fit: BoxFit.cover,
+                        )
+                      : Container(
+                          height: 180,
+                          color: Colors.grey.shade300,
+                          child: const Center(
+                              child: Text("No Banner Selected")),
+                        ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: pickBannerImage,
+              icon: const Icon(Icons.image),
+              label: const Text("Choose Banner Image"),
             ),
             const SizedBox(height: 20),
             TextField(
@@ -170,14 +192,10 @@ class _ShopSettingsPageState extends State<ShopSettingsPage> {
             ),
             const SizedBox(height: 20),
             SizedBox(
-              width: double.infinity,
               height: 55,
               child: ElevatedButton(
                 onPressed: updateShop,
-                child: const Text(
-                  "Save Changes",
-                  style: TextStyle(fontSize: 17),
-                ),
+                child: const Text("Save Changes"),
               ),
             ),
           ],

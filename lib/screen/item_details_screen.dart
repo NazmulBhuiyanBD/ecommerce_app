@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecommerce_app/provider/cart_provider.dart';
+import 'package:ecommerce_app/screen/checkout_page.dart';
 import 'package:ecommerce_app/screen/store_details.dart';
 import 'package:ecommerce_app/utils/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -65,7 +66,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
     final double totalPrice = finalPrice * quantity;
 
     return Scaffold(
-      backgroundColor: AppColors.secondary, // ✅ FIXED BACKGROUND
+      backgroundColor: AppColors.secondary, 
       appBar: AppBar(
         title: Text(name),
         backgroundColor: AppColors.secondary,
@@ -77,7 +78,6 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ---------------- IMAGE SECTION ----------------
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -116,7 +116,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                     child: Image.network(
                       images.isNotEmpty
                           ? images[selectedImage]
-                          : "https://via.placeholder.com/300",
+                          : "https://drive.google.com/file/d/1e6cz8vgwIcljKau_pnd3f3-PmTyMXIn2/view?usp=drive_link",
                       height: 260,
                       fit: BoxFit.cover,
                     ),
@@ -126,8 +126,6 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
             ),
 
             const SizedBox(height: 20),
-
-            // ---------------- NAME ----------------
             Text(
               name,
               maxLines: 2,
@@ -170,8 +168,6 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                   ),
 
             const SizedBox(height: 10),
-
-            // ---------------- STOCK ----------------
             Text(
               stock > 0 ? "In Stock: $stock" : "Out of Stock",
               style: TextStyle(
@@ -183,7 +179,6 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
 
             const SizedBox(height: 20),
 
-            // ---------------- QUANTITY ----------------
             Row(
               children: [
                 const Text(
@@ -235,7 +230,6 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
 
             const SizedBox(height: 25),
 
-            // ---------------- SELLER ----------------
             GestureDetector(
               onTap: shopId == null
                   ? null
@@ -275,7 +269,6 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
 
             const SizedBox(height: 30),
 
-            // ---------------- DESCRIPTION ----------------
             const Text(
               "Description:",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -290,8 +283,6 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
           ],
         ),
       ),
-
-      // ---------------- BOTTOM BAR ----------------
       bottomNavigationBar: Container(
         height: 70,
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -323,16 +314,45 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
 
             const SizedBox(width: 12),
 
-            Expanded(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                onPressed: stock == 0 ? null : () {},
-                child: const Text(
-                  "Buy Now",
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+Expanded(
+  child: ElevatedButton(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.red,
+    ),
+    onPressed: stock == 0
+        ? null
+        : () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CheckoutPage(
+                  isBuyNow: true,
+                  buyNowItems: [
+                    {
+                      "productId": widget.productId,
+                      "name": p["name"],
+                      "price": price,
+                      "discount": discount,
+                      "finalPrice": finalPrice,
+                      "image": (p["images"] != null && p["images"].isNotEmpty)
+                          ? p["images"][0]
+                          : p["image"],
+                      "quantity": quantity,
+                      "shopId": p["shopId"],
+                    }
+                  ],
                 ),
               ),
-            ),
+            );
+          },
+    child: const Text(
+      "Buy Now",
+      style: TextStyle(fontSize: 18, color: Colors.white),
+    ),
+  ),
+),
+
+
           ],
         ),
       ),

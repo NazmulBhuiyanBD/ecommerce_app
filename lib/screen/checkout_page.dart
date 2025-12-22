@@ -1,35 +1,41 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecommerce_app/provider/cart_provider.dart';
-import 'package:ecommerce_app/screen/main_page.dart';
+import 'package:ecommerce_app/screen/payment_Screen/payment_selection_page.dart';
 import 'package:ecommerce_app/utils/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class CheckoutPage extends StatefulWidget {
-  const CheckoutPage({super.key});
+  final bool isBuyNow;
+  final List<Map<String, dynamic>>? buyNowItems;
+
+  const CheckoutPage({
+    super.key,
+    this.isBuyNow = false,
+    this.buyNowItems,
+  });
 
   @override
   State<CheckoutPage> createState() => _CheckoutPageState();
 }
 
 class _CheckoutPageState extends State<CheckoutPage> {
-  final _name = TextEditingController();
-  final _phone = TextEditingController();
-  final _address = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _addressCtrl = TextEditingController();
 
-  String _paymentMethod = "Cash on Delivery";
+  String paymentMethod = "Cash on Delivery";
+  static const double deliveryCharge = 2.0;
   bool loading = false;
 
-  Future<void> placeOrder() async {
-    final cart = Provider.of<CartProvider>(context, listen: false);
+  Future<void> placeOrder({required String method}) async {
     final user = FirebaseAuth.instance.currentUser;
-
     if (user == null) return;
 
-    if (_name.text.trim().isEmpty ||
-        _phone.text.trim().isEmpty ||
-        _address.text.trim().isEmpty) {
+    if (_nameCtrl.text.isEmpty ||
+        _phoneCtrl.text.isEmpty ||
+        _addressCtrl.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("All fields are required")),
       );
@@ -38,215 +44,211 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     setState(() => loading = true);
 
-    try {
-      // Prepare product list properly
-      final List<Map<String, dynamic>> productList = cart.items.map((item) {
-        final p = item.product;
-        final price = (p["price"] ?? 0).toDouble();
-        final discount = (p["discount"] ?? 0).toDouble();
-        final finalPrice = price - discount;
+    final cart = context.read<CartProvider>();
 
-        // safe image
-        final List imgs = p["images"] ?? [];
-        final img = imgs.isNotEmpty ? imgs[0] : p["image"];
+    final List<Map<String, dynamic>> products =
+        widget.isBuyNow ? widget.buyNowItems! : cart.items.map((item) {
+          final p = item.product;
+          final price = (p["price"] ?? 0).toDouble();
+          final discount = (p["discount"] ?? 0).toDouble();
 
-        return {
-          "productId": item.productId,
-          "name": p["name"],
-          "price": price,
-          "discount": discount,
-          "finalPrice": finalPrice,
-          "image": img,
-          "quantity": item.quantity,
-           "shopId": p["shopId"],
-        };
-      }).toList();
+          return {
+            "productId": item.productId,
+            "name": p["name"],
+            "price": price,
+            "discount": discount,
+            "finalPrice": price - discount,
+            "image": (p["images"] != null && p["images"].isNotEmpty)
+                ? p["images"][0]
+                : p["image"],
+            "quantity": item.quantity,
+            "shopId": p["shopId"],
+          };
+        }).toList();
 
-      final orderData = {
-        "userId": user.uid,
-        "name": _name.text.trim(),
-        "phone": _phone.text.trim(),
-        "address": _address.text.trim(),
-        "paymentMethod": _paymentMethod,
-        "products": productList,
-        "totalDiscount": cart.totalDiscount(),
-        "totalPrice": cart.totalPrice(),
-        "status": "Pending",
-        "timestamp": FieldValue.serverTimestamp(),
-      };
+    double subtotal = 0;
+    double totalDiscount = 0;
 
-      await FirebaseFirestore.instance.collection("orders").add(orderData);
-
-      cart.clear();
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Order placed successfully!")),
-      );
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const MainPage()),
-        (route) => false,
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed: $e")),
-      );
+    for (var p in products) {
+      subtotal += p["price"] * p["quantity"];
+      totalDiscount += p["discount"] * p["quantity"];
     }
 
+    final orderData = {
+      "userId": user.uid,
+      "name": _nameCtrl.text.trim(),
+      "phone": _phoneCtrl.text.trim(),
+      "address": _addressCtrl.text.trim(),
+      "paymentMethod": method,
+      "products": products,
+      "deliveryCharge": deliveryCharge,
+      "totalDiscount": totalDiscount,
+      "totalPrice": subtotal + deliveryCharge - totalDiscount,
+      "status": "Pending",
+      "timestamp": FieldValue.serverTimestamp(),
+    };
+
+    await FirebaseFirestore.instance.collection("orders").add(orderData);
+
+    if (!widget.isBuyNow) {
+      cart.clear();
+    }
+
+    if (!mounted) return;
     setState(() => loading = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Order placed successfully")),
+    );
+
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final cart = Provider.of<CartProvider>(context);
+    final cart = context.watch<CartProvider>();
+
+    final items = widget.isBuyNow
+        ? widget.buyNowItems!
+        : cart.items.map((e) {
+            final p = e.product;
+            return {
+              "price": p["price"],
+              "discount": p["discount"] ?? 0,
+              "quantity": e.quantity,
+            };
+          }).toList();
+
+    double subtotal = 0;
+    double discount = 0;
+
+    for (var i in items) {
+      subtotal += i["price"] * i["quantity"];
+      discount += i["discount"] * i["quantity"];
+    }
+
+    final totalPayable = subtotal + deliveryCharge - discount;
 
     return Scaffold(
+      backgroundColor: AppColors.secondary,
       appBar: AppBar(
         title: const Text("Checkout"),
-        backgroundColor: AppColors.primary,
-        centerTitle: true,
+        backgroundColor: AppColors.secondary,
       ),
-
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ---------------- SHIPPING FORM ----------------
-            const Text("Shipping Details",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 15),
+            _iconInput(Icons.person, "Full Name", _nameCtrl),
+            _iconInput(Icons.phone, "Phone Number", _phoneCtrl,
+                keyboard: TextInputType.phone),
+            _iconInput(Icons.location_on, "Delivery Address", _addressCtrl,
+                maxLines: 2),
 
-            TextField(
-              controller: _name,
-              decoration: const InputDecoration(
-                labelText: "Full Name",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: _phone,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: "Phone Number",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: _address,
-              decoration: const InputDecoration(
-                labelText: "Full Address",
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 2,
-            ),
-
-            const SizedBox(height: 25),
-
-            // ---------------- PAYMENT METHOD ----------------
-            const Text("Payment Method",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
 
             DropdownButtonFormField(
-              value: _paymentMethod,
+              value: paymentMethod,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: "Payment Method",
+              ),
               items: const [
                 DropdownMenuItem(
                     value: "Cash on Delivery",
                     child: Text("Cash on Delivery")),
-                DropdownMenuItem(value: "Bkash", child: Text("Bkash Payment")),
-                DropdownMenuItem(value: "Nagad", child: Text("Nagad Payment")),
+                DropdownMenuItem(
+                    value: "Online Pay", child: Text("Online Pay")),
               ],
-              onChanged: (value) {
-                setState(() => _paymentMethod = value.toString());
-              },
-            ),
-
-            const SizedBox(height: 25),
-
-            // ---------------- ORDER SUMMARY ----------------
-            const Text("Order Summary",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-
-            ...cart.items.map((item) {
-              final p = item.product;
-              final List imgs = p["images"] ?? [];
-              final img = imgs.isNotEmpty ? imgs[0] : p["image"];
-
-              final price = (p["price"] ?? 0).toDouble();
-              final discount = (p["discount"] ?? 0).toDouble();
-              final finalPrice = price - discount;
-
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Image.network(img, width: 50, height: 50),
-                title: Text(p["name"]),
-                subtitle: Text(
-                    "৳${finalPrice.toStringAsFixed(2)}   |   Qty: ${item.quantity}"),
-              );
-            }).toList(),
-
-            const Divider(),
-
-            // ---------------- DISCOUNT ----------------
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Total Discount:",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                Text(
-                  "- ৳ ${cart.totalDiscount().toStringAsFixed(2)}",
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-  
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Total Payable:",
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text(
-                  "৳ ${cart.totalPrice().toStringAsFixed(2)}",
-                  style: const TextStyle(
-                      fontSize: 22,
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold),
-                ),
-              ],
+              onChanged: (v) => setState(() => paymentMethod = v.toString()),
             ),
 
             const SizedBox(height: 20),
 
+            _summaryRow("Delivery Charge", deliveryCharge),
+            _summaryRow("Total Discount", -discount),
+            const Divider(),
+            _summaryRow("Total Payable", totalPayable, bold: true),
+
+            const SizedBox(height: 25),
 
             SizedBox(
               width: double.infinity,
-              height: 55,
+              height: 52,
               child: ElevatedButton(
-                onPressed: loading ? null : placeOrder,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                 ),
+                onPressed: loading
+                    ? null
+                    : () {
+                        if (paymentMethod == "Online Pay") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PaymentSelectionPage(
+                                payableAmount: totalPayable,
+                                onSuccess: () =>
+                                    placeOrder(method: "Online Pay"),
+                              ),
+                            ),
+                          );
+                        } else {
+                          placeOrder(method: "Cash on Delivery");
+                        }
+                      },
                 child: loading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("Place Order",
-                        style: TextStyle(fontSize: 18, color: Colors.white)),
+                    : Text(
+                        "Pay ৳ ${totalPayable.toStringAsFixed(2)}",
+                        style: const TextStyle(
+                            fontSize: 18, color: Colors.white),
+                      ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _iconInput(IconData icon, String hint, TextEditingController ctrl,
+      {TextInputType keyboard = TextInputType.text, int maxLines = 1}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: TextField(
+        controller: ctrl,
+        keyboardType: keyboard,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          prefixIcon: Icon(icon),
+          hintText: hint,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _summaryRow(String title, double value, {bool bold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title,
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: bold ? FontWeight.bold : FontWeight.w500)),
+          Text(
+            "৳ ${value.toStringAsFixed(2)}",
+            style: TextStyle(
+              color:Colors.white,
+                fontSize: 16,
+                fontWeight: bold ? FontWeight.bold : FontWeight.w600),
+          ),
+        ],
       ),
     );
   }

@@ -49,26 +49,35 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  double totalPrice() {
-    double total = 0;
-    for (var c in _items) {
-      final price = double.tryParse(c.product['price'].toString()) ?? 0;
-      total += price * c.quantity;
-    }
-    return total;
+double totalPrice() {
+  double total = 0;
+
+  for (var item in items) {
+    final double price = (item.product["price"] ?? 0).toDouble();
+    final double discount = (item.product["discount"] ?? 0).toDouble();
+
+    final double finalPrice = price - discount;
+
+    total += finalPrice * item.quantity;
   }
+
+  return total;
+}
+
 
   void clear() {
     _items.clear();
     notifyListeners();
   }
-  double totalDiscount() {
-  double total = 0;
-  for (var c in _items) {
-    final discount = (c.product["discount"] ?? 0).toDouble();
-    total += discount * c.quantity;
+double totalDiscount() {
+  double discount = 0;
+
+  for (var item in items) {
+    final double d = (item.product["discount"] ?? 0).toDouble();
+    discount += d * item.quantity;
   }
-  return total;
+
+  return discount;
 }
 
 }

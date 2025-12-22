@@ -13,6 +13,12 @@ class CartScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
 
+    // ✅ FIXED DELIVERY CHARGE
+    const double deliveryCharge = 2.0;
+
+    // ✅ FINAL TOTAL = price(after discount) + delivery
+    final double grandTotal = cart.totalPrice() + deliveryCharge;
+
     return Scaffold(
       backgroundColor: AppColors.secondary,
 
@@ -20,8 +26,10 @@ class CartScreen extends StatelessWidget {
         title: const Text("My Cart"),
         centerTitle: true,
         backgroundColor: AppColors.secondary,
+        elevation: 0,
       ),
 
+      // -------------------- CART ITEMS --------------------
       body: cart.items.isEmpty
           ? const Center(
               child: Text(
@@ -45,7 +53,7 @@ class CartScreen extends StatelessWidget {
                 final String img = images.isNotEmpty
                     ? images[0]
                     : p["image"] ??
-                        "https://drive.google.com/file/d/1e6cz8vgwIcljKau_pnd3f3-PmTyMXIn2/view?usp=sharing";
+                        "https://via.placeholder.com/150";
 
                 return Card(
                   elevation: 3,
@@ -82,17 +90,19 @@ class CartScreen extends StatelessWidget {
                           Text(
                             "৳ ${price.toStringAsFixed(2)}",
                             style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                                decoration: TextDecoration.lineThrough),
+                              fontSize: 12,
+                              color: Colors.grey,
+                              decoration: TextDecoration.lineThrough,
+                            ),
                           ),
                         ] else
                           Text(
                             "৳ ${price.toStringAsFixed(2)}",
                             style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.orange),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange,
+                            ),
                           ),
                       ],
                     ),
@@ -106,13 +116,13 @@ class CartScreen extends StatelessWidget {
                             icon: const Icon(Icons.remove_circle_outline),
                             onPressed: () => cart.decrease(productId),
                           ),
-
                           Text(
                             "${item.quantity}",
                             style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-
                           IconButton(
                             icon: const Icon(Icons.add_circle_outline),
                             onPressed: () => cart.increase(productId),
@@ -125,138 +135,137 @@ class CartScreen extends StatelessWidget {
               },
             ),
 
-bottomNavigationBar: cart.items.isEmpty
-    ? const SizedBox()
-    : Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 8,
-              color: Colors.black.withOpacity(0.1),
-              offset: const Offset(0, -3),
+      // -------------------- BOTTOM SUMMARY --------------------
+      bottomNavigationBar: cart.items.isEmpty
+          ? const SizedBox()
+          : Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    blurRadius: 8,
+                    color: Colors.black.withOpacity(0.1),
+                    offset: const Offset(0, -3),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+
+                  // ---------- DISCOUNT ----------
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Total Discount:",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.red,
+                        ),
+                      ),
+                      Text(
+                        "- ৳ ${cart.totalDiscount().toStringAsFixed(2)}",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  // ---------- DELIVERY ----------
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Delivery Charge:",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        "৳ 2.00",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // ---------- FINAL TOTAL ----------
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Total:",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        "৳ ${grandTotal.toStringAsFixed(2)}",
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // ---------- CHECKOUT ----------
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: () {
+                        final user = FirebaseAuth.instance.currentUser;
+
+                        if (user == null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginPage(),
+                            ),
+                          );
+                          return;
+                        }
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CheckoutPage(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        "Checkout",
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // ----------------- TOTAL DISCOUNT -----------------
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Total Discount:",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.red,
-                  ),
-                ),
-                Text(
-                  "- ৳ ${cart.totalDiscount().toStringAsFixed(2)}",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 6),
-
-            // ----------------- PAYABLE AFTER DISCOUNT -----------------
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Discount Applied:",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-                Text(
-                  "- ৳ ${cart.totalDiscount().toStringAsFixed(2)}",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.redAccent,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            // ----------------- FINAL TOTAL -----------------
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Total:",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  "৳ ${cart.totalPrice().toStringAsFixed(2)}",
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 14),
-
-// ----------------- CHECKOUT BUTTON -----------------
-SizedBox(
-  width: double.infinity,
-  height: 52,
-  child: ElevatedButton(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: AppColors.primary,
-      foregroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-    ),
-    onPressed: () {
-      final user = FirebaseAuth.instance.currentUser;
-
-      // if user is not logged in → go to login page
-      if (user == null) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginPage()),
-        );
-        return;
-      }
-
-      // go to checkout page
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const CheckoutPage()),
-      );
-    },
-    child: const Text(
-      "Checkout",
-      style: TextStyle(fontSize: 18),
-    ),
-  ),
-),
-
-          ],
-        ),
-      ),
-
     );
   }
 }

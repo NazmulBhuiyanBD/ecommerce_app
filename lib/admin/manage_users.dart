@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ecommerce_app/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class ManageUsers extends StatefulWidget {
@@ -16,15 +17,18 @@ class _ManageUsersState extends State<ManageUsers> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.secondary,
       appBar: AppBar(
+        backgroundColor: AppColors.secondary,
         title: const Text("All Customers"),
         centerTitle: true,
+        elevation: 0,
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
+            // ---------------- SEARCH BAR ----------------
             TextField(
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
@@ -34,12 +38,16 @@ class _ManageUsersState extends State<ManageUsers> {
                 ),
               ),
               onChanged: (value) {
-                setState(() => searchQuery = value.trim());
+                setState(() {
+                  searchQuery = value.trim().toLowerCase();
+                  page = 0;
+                });
               },
             ),
 
             const SizedBox(height: 15),
 
+            // ---------------- USER LIST ----------------
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
@@ -51,25 +59,33 @@ class _ManageUsersState extends State<ManageUsers> {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  final allUsers = snapshot.data!.docs;
+                  List<QueryDocumentSnapshot> allUsers = snapshot.data!.docs;
 
+                  // sort by name
                   allUsers.sort((a, b) =>
-                      (a["name"] ?? "").toString().compareTo(
-                            (b["name"] ?? "").toString(),
-                          ));
+                      (a["name"] ?? "")
+                          .toString()
+                          .compareTo((b["name"] ?? "").toString()));
 
+                  // search filter
                   final filtered = allUsers.where((u) {
-                    final name = (u["name"] ?? "").toLowerCase();
-                    final email = (u["email"] ?? "").toLowerCase();
-                    final q = searchQuery.toLowerCase();
-                    return name.contains(q) || email.contains(q);
+                    final name =
+                        (u["name"] ?? "").toString().toLowerCase();
+                    final email =
+                        (u["email"] ?? "").toString().toLowerCase();
+                    return name.contains(searchQuery) ||
+                        email.contains(searchQuery);
                   }).toList();
 
                   final total = filtered.length;
                   final start = page * limit;
-                  final end = (start + limit > total) ? total : start + limit;
+                  final end =
+                      (start + limit > total) ? total : start + limit;
 
-                  final users = filtered.sublist(start, end);
+                  final users = filtered.sublist(
+                    start,
+                    end < start ? start : end,
+                  );
 
                   return Column(
                     children: [
@@ -80,56 +96,84 @@ class _ManageUsersState extends State<ManageUsers> {
                                 itemCount: users.length,
                                 itemBuilder: (_, index) {
                                   final u = users[index];
+                                  final bool disabled =
+                                      u["disabled"] == true;
+
                                   final Timestamp? ts = u["createdAt"];
                                   final createdAt = ts?.toDate();
 
-                                  final bool disabled = u["disabled"] == true;
+                                  final String? profilePic =
+                                      u["profilePic"];
 
                                   return Card(
+                                    margin:
+                                        const EdgeInsets.only(bottom: 10),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius:
+                                          BorderRadius.circular(12),
                                     ),
                                     child: ListTile(
+                                      // ---------------- PROFILE IMAGE ----------------
                                       leading: CircleAvatar(
+                                        radius: 24,
                                         backgroundColor:
-                                            disabled ? Colors.grey : Colors.blue,
-                                        child: Icon(
-                                          disabled
-                                              ? Icons.block
-                                              : Icons.person,
-                                          color: Colors.white,
-                                        ),
+                                            Colors.grey.shade200,
+                                        backgroundImage:
+                                            profilePic != null &&
+                                                    profilePic.isNotEmpty
+                                                ? NetworkImage(profilePic)
+                                                : null,
+                                        child: profilePic == null ||
+                                                profilePic.isEmpty
+                                            ? Icon(
+                                                disabled
+                                                    ? Icons.block
+                                                    : Icons.person,
+                                                color:
+                                                    Colors.grey.shade700,
+                                              )
+                                            : null,
                                       ),
 
+                                      // ---------------- NAME + STATUS ----------------
                                       title: Row(
                                         children: [
-                                          Text(
-                                            u["name"] ?? "Unknown",
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold),
+                                          Expanded(
+                                            child: Text(
+                                              u["name"] ?? "Unknown",
+                                              style: const TextStyle(
+                                                fontWeight:
+                                                    FontWeight.bold,
+                                              ),
+                                            ),
                                           ),
-
                                           if (disabled)
                                             Container(
-                                              margin: const EdgeInsets.only(left: 8),
-                                              padding: const EdgeInsets.symmetric(
-                                                  horizontal: 8, vertical: 3),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 3),
                                               decoration: BoxDecoration(
-                                                color: Colors.red.shade100,
+                                                color:
+                                                    Colors.red.shade100,
                                                 borderRadius:
-                                                    BorderRadius.circular(8),
+                                                    BorderRadius.circular(
+                                                        8),
                                               ),
                                               child: const Text(
                                                 "Disabled",
                                                 style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: Colors.red,
-                                                    fontWeight: FontWeight.bold),
+                                                  fontSize: 12,
+                                                  color: Colors.red,
+                                                  fontWeight:
+                                                      FontWeight.bold,
+                                                ),
                                               ),
                                             ),
                                         ],
                                       ),
 
+                                      // ---------------- EMAIL + JOIN DATE ----------------
                                       subtitle: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
@@ -139,16 +183,20 @@ class _ManageUsersState extends State<ManageUsers> {
                                           Text(
                                             "Joined: ${createdAt != null ? createdAt.toString().substring(0, 10) : "N/A"}",
                                             style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey),
+                                              fontSize: 12,
+                                              color: Colors.grey,
+                                            ),
                                           ),
                                         ],
                                       ),
 
-                                      trailing: PopupMenuButton(
+                                      // ---------------- ACTION MENU ----------------
+                                      trailing: PopupMenuButton<String>(
                                         itemBuilder: (_) => [
                                           PopupMenuItem(
-                                            value: disabled ? "enable" : "disable",
+                                            value: disabled
+                                                ? "enable"
+                                                : "disable",
                                             child: Text(
                                               disabled
                                                   ? "Enable User"
@@ -156,22 +204,14 @@ class _ManageUsersState extends State<ManageUsers> {
                                             ),
                                           ),
                                         ],
-
-                                        /// ACTIONS
                                         onSelected: (val) async {
-                                          if (val == "disable") {
-                                            FirebaseFirestore.instance
-                                                .collection("users")
-                                                .doc(u.id)
-                                                .update({"disabled": true});
-                                          }
-
-                                          if (val == "enable") {
-                                            FirebaseFirestore.instance
-                                                .collection("users")
-                                                .doc(u.id)
-                                                .update({"disabled": false});
-                                          }
+                                          await FirebaseFirestore.instance
+                                              .collection("users")
+                                              .doc(u.id)
+                                              .update({
+                                            "disabled":
+                                                val == "disable"
+                                          });
                                         },
                                       ),
                                     ),
@@ -180,19 +220,24 @@ class _ManageUsersState extends State<ManageUsers> {
                               ),
                       ),
 
+                      // ---------------- PAGINATION ----------------
                       if (total > limit)
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment:
+                              MainAxisAlignment.center,
                           children: [
                             ElevatedButton(
-                              onPressed:
-                                  page > 0 ? () => setState(() => page--) : null,
+                              onPressed: page > 0
+                                  ? () =>
+                                      setState(() => page--)
+                                  : null,
                               child: const Text("Previous"),
                             ),
                             const SizedBox(width: 12),
                             ElevatedButton(
                               onPressed: end < total
-                                  ? () => setState(() => page++)
+                                  ? () =>
+                                      setState(() => page++)
                                   : null,
                               child: const Text("Next"),
                             ),

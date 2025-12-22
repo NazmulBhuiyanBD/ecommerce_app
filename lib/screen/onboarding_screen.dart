@@ -1,3 +1,4 @@
+import 'package:ecommerce_app/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../auth/role_checker.dart';
@@ -64,7 +65,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
           const SizedBox(height: 10),
           Image.asset(asset, height: 400),
           const SizedBox(height: 10),
-          Text(subtitle, style: const TextStyle(fontSize: 16, color: Colors.black54)),
+          Text(subtitle, style: const TextStyle(fontSize: 16, color: Colors.black54,fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -83,7 +84,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
       width: active ? 20 : 8,
       height: 8,
       decoration: BoxDecoration(
-        color: active ? Colors.orange : Colors.grey.shade300,
+        color: active ? AppColors.primary : Colors.grey.shade300,
         borderRadius: BorderRadius.circular(8),
       ),
     );
@@ -96,7 +97,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+          style: ElevatedButton.styleFrom(backgroundColor:AppColors.primary),
           onPressed: () {
             if (_page == 1) {
               _complete();
@@ -107,7 +108,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
               );
             }
           },
-          child: Text(_page == 1 ? 'Get Started' : 'Next'),
+          child: Text(_page == 1 ? 'Get Started' : 'Next',style: TextStyle(color: Colors.white),),
         ),
       ),
     );
