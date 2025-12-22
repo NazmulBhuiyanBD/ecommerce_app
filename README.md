@@ -115,13 +115,13 @@ Production credentials can be added later.
 ---
 
 ### 🛍 Customer Flow
-| All Products | Product Details |
-|:------------:|:---------------:|
-| ![All Products](ScreenShot/all_product.png) | ![Product Details](ScreenShot/product_details.png) |
+|First Screen| All Products | Product Details |
+|:------------:|:---------------:|:------------:|
+| ![Main Screen](ScreenShot/screen1.png)| ![All Products](ScreenShot/all_product.png) | ![Product Details](ScreenShot/product_details.png) |
 
-| Online Payment | Order Details |
-|:--------------:|:-------------:|
-| ![Online Payment](ScreenShot/online_Payment.png) | ![Order Details](ScreenShot/order_details.png) |
+| Online Payment |SSLCommerce |Bkash | Order Details |
+|:--------------:|:-------------:|:-------------:|
+| ![Online Payment](ScreenShot/online_Payment.png) | ![Payment Method](ScreenShot/sslCommerce.png)|![Payment Method](ScreenShot/bkashCheckout.png)| ![Order Details](ScreenShot/order_details.png) |
 
 | Purchase History | Customer Profile |
 |:----------------:|:----------------:|
