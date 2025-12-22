@@ -3,11 +3,9 @@
 A complete **Flutter-based E-Commerce mobile application** supporting **Customers, Shop Owners, and Admins**.  
 The system includes product management, cart & checkout, online payment integration (test mode), and role-based dashboards using **Firebase**.
 
----
-
 ## 📱 Screenshots
 
-All application screenshots are available inside the **`/ScreenShot`** folder.
+All application screenshots are available inside the **`/Screenshot`** folder.
 
 Included screens:
 - Admin Dashboard
