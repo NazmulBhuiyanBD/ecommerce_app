@@ -98,31 +98,54 @@ Production credentials can be added later.
 
 ## 📸 Screenshots
 
+---
+
 ### 🔐 Authentication
-![Login](ScreenShot/loginscreen.png)
-![Register](ScreenShot/registration.png)
+| Login | Register |
+|:-----:|:--------:|
+| ![Login](ScreenShot/loginscreen.png) | ![Register](ScreenShot/registration.png) |
+
+---
 
 ### 🏠 Onboarding
-![Onboarding 1](ScreenShot/onBroadingScreen1.png)
-![Onboarding 2](ScreenShot/onBroadingScreen2.png)
+| Onboarding 1 | Onboarding 2 |
+|:------------:|:------------:|
+| ![Onboarding 1](ScreenShot/onBroadingScreen1.png) | ![Onboarding 2](ScreenShot/onBroadingScreen2.png) |
+
+---
 
 ### 🛍 Customer Flow
-![All Products](ScreenShot/all_product.png)
-![Product Details](ScreenShot/product_details.png)
-![Online Payment](ScreenShot/online_Payment.png)
-![Order Details](ScreenShot/order_details.png)
-![Purchase History](ScreenShot/purchase_history.png)
-![Customer Profile](ScreenShot/customerProfile.png)
+| All Products | Product Details |
+|:------------:|:---------------:|
+| ![All Products](ScreenShot/all_product.png) | ![Product Details](ScreenShot/product_details.png) |
+
+| Online Payment | Order Details |
+|:--------------:|:-------------:|
+| ![Online Payment](ScreenShot/online_Payment.png) | ![Order Details](ScreenShot/order_details.png) |
+
+| Purchase History | Customer Profile |
+|:----------------:|:----------------:|
+| ![Purchase History](ScreenShot/purchase_history.png) | ![Customer Profile](ScreenShot/customerProfile.png) |
+
+---
 
 ### 🏪 Shop Owner
-![Shop Owner Dashboard](ScreenShot/shop_owner_dashboard.png)
-![Shop Products](ScreenShot/shop_owner_product.png)
-![Shop Settings](ScreenShot/shop_setting.png)
+| Dashboard | Products | Settings |
+|:---------:|:--------:|:--------:|
+| ![Dashboard](ScreenShot/shop_owner_dashboard.png) | ![Products](ScreenShot/shop_owner_product.png) | ![Settings](ScreenShot/shop_setting.png) |
+
+---
 
 ### 🛠 Admin Panel
-![Admin Dashboard](ScreenShot/adminDashboard.png)
-![Manage Categories](ScreenShot/admin_manageCategory.png)
-![Manage Orders](ScreenShot/admin_managerOrder.png)
-![Manage Products](ScreenShot/admin_productList.png)
-![Store List](ScreenShot/admin_storeList.png)
-![User List](ScreenShot/all_userList.png)
+| Dashboard | Categories |
+|:---------:|:----------:|
+| ![Dashboard](ScreenShot/adminDashboard.png) | ![Categories](ScreenShot/admin_manageCategory.png) |
+
+| Orders | Products |
+|:------:|:--------:|
+| ![Orders](ScreenShot/admin_managerOrder.png) | ![Products](ScreenShot/admin_productList.png) |
+
+| Stores | Users |
+|:------:|:-----:|
+| ![Stores](ScreenShot/admin_storeList.png) | ![Users](ScreenShot/all_userList.png) |
+
