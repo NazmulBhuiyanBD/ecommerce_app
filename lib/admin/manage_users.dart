@@ -28,7 +28,7 @@ class _ManageUsersState extends State<ManageUsers> {
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
-            // ---------------- SEARCH BAR ----------------
+            // ================= SEARCH =================
             TextField(
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
@@ -47,7 +47,7 @@ class _ManageUsersState extends State<ManageUsers> {
 
             const SizedBox(height: 15),
 
-            // ---------------- USER LIST ----------------
+            // ================= USER LIST =================
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
@@ -59,15 +59,23 @@ class _ManageUsersState extends State<ManageUsers> {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  List<QueryDocumentSnapshot> allUsers = snapshot.data!.docs;
+                  final docs = snapshot.data!.docs;
 
-                  // sort by name
-                  allUsers.sort((a, b) =>
-                      (a["name"] ?? "")
-                          .toString()
-                          .compareTo((b["name"] ?? "").toString()));
+                  // Convert safely
+                  List<Map<String, dynamic>> allUsers = docs.map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    data["__id"] = doc.id;
+                    return data;
+                  }).toList();
 
-                  // search filter
+                  // Sort by name
+                  allUsers.sort((a, b) {
+                    final aName = (a["name"] ?? "").toString();
+                    final bName = (b["name"] ?? "").toString();
+                    return aName.compareTo(bName);
+                  });
+
+                  // Search filter
                   final filtered = allUsers.where((u) {
                     final name =
                         (u["name"] ?? "").toString().toLowerCase();
@@ -96,14 +104,24 @@ class _ManageUsersState extends State<ManageUsers> {
                                 itemCount: users.length,
                                 itemBuilder: (_, index) {
                                   final u = users[index];
-                                  final bool disabled =
-                                      u["disabled"] == true;
 
-                                  final Timestamp? ts = u["createdAt"];
-                                  final createdAt = ts?.toDate();
+                                  final bool disabled =
+                                      u.containsKey("disabled")
+                                          ? u["disabled"] == true
+                                          : false;
+
+                                  final Timestamp? ts =
+                                      u.containsKey("createdAt")
+                                          ? u["createdAt"]
+                                          : null;
+
+                                  final DateTime? createdAt =
+                                      ts?.toDate();
 
                                   final String? profilePic =
-                                      u["profilePic"];
+                                      u.containsKey("profilePic")
+                                          ? u["profilePic"]
+                                          : null;
 
                                   return Card(
                                     margin:
@@ -113,7 +131,7 @@ class _ManageUsersState extends State<ManageUsers> {
                                           BorderRadius.circular(12),
                                     ),
                                     child: ListTile(
-                                      // ---------------- PROFILE IMAGE ----------------
+                                      // ================= PROFILE =================
                                       leading: CircleAvatar(
                                         radius: 24,
                                         backgroundColor:
@@ -135,7 +153,7 @@ class _ManageUsersState extends State<ManageUsers> {
                                             : null,
                                       ),
 
-                                      // ---------------- NAME + STATUS ----------------
+                                      // ================= NAME + STATUS =================
                                       title: Row(
                                         children: [
                                           Expanded(
@@ -173,7 +191,7 @@ class _ManageUsersState extends State<ManageUsers> {
                                         ],
                                       ),
 
-                                      // ---------------- EMAIL + JOIN DATE ----------------
+                                      // ================= EMAIL + DATE =================
                                       subtitle: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
@@ -190,7 +208,7 @@ class _ManageUsersState extends State<ManageUsers> {
                                         ],
                                       ),
 
-                                      // ---------------- ACTION MENU ----------------
+                                      // ================= ACTION =================
                                       trailing: PopupMenuButton<String>(
                                         itemBuilder: (_) => [
                                           PopupMenuItem(
@@ -207,7 +225,7 @@ class _ManageUsersState extends State<ManageUsers> {
                                         onSelected: (val) async {
                                           await FirebaseFirestore.instance
                                               .collection("users")
-                                              .doc(u.id)
+                                              .doc(u["__id"])
                                               .update({
                                             "disabled":
                                                 val == "disable"
@@ -220,7 +238,7 @@ class _ManageUsersState extends State<ManageUsers> {
                               ),
                       ),
 
-                      // ---------------- PAGINATION ----------------
+                      // ================= PAGINATION =================
                       if (total > limit)
                         Row(
                           mainAxisAlignment:

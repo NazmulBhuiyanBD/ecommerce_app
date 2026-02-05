@@ -244,7 +244,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           Text(
             "৳ ${value.toStringAsFixed(2)}",
             style: TextStyle(
-              color:Colors.white,
+              color:Colors.black54,
                 fontSize: 16,
                 fontWeight: bold ? FontWeight.bold : FontWeight.w600),
           ),
